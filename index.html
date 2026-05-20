@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="FamilyFruit"/>
+<meta name="theme-color" content="#1a3d1a"/>
+<title>FamilyFruit — Gestión de Ventas</title>
+<style>
+:root{--g1:#1a3d1a;--g2:#2d6a2d;--gl:#eaf3de;--gm:#b8d98b;--gold:#b8860b;--goldl:#fef9e7;--goldb:#e8d090;--blue:#1a5fa5;--bluel:#e8f1fb;--red:#922;--redl:#fdf0f0;--bg:#f6f3ec;--surf:#fff;--surf2:#f0ece2;--tx:#18180f;--tx2:#52524a;--tx3:#949484;--bd:#ddd9ce;--r:16px;--rs:10px;--sh:0 2px 14px rgba(26,61,26,.08);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;}
+#app{display:flex;flex-direction:column;height:100vh;max-width:520px;margin:0 auto;}
+
+/* ── DESKTOP ── */
+@media(min-width:768px){
+  body{overflow:hidden;}
+  #app{max-width:100%;flex-direction:row;height:100vh;}
+  .hdr{width:210px;min-width:210px;flex-shrink:0;flex-direction:column;height:100vh;padding:20px 12px 16px;display:flex;position:fixed;left:0;top:0;overflow-y:auto;}
+  .hdr-row{flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:16px;}
+  .pills{flex-direction:column;overflow-x:visible;padding-bottom:0;gap:2px;}
+  .pill{border-radius:10px;text-align:left;padding:10px 13px;font-size:12px;width:100%;}
+  .content{margin-left:210px;flex:1;overflow-y:auto;padding:28px 36px 40px;max-height:100vh;}
+  .bnav{display:none;}
+  .mg2{grid-template-columns:repeat(3,1fr);}
+  .mg3{grid-template-columns:repeat(4,1fr);}
+  .fr2{grid-template-columns:1fr 1fr;}
+  .fr3{grid-template-columns:1fr 1fr 1fr;}
+}
+
+/* ── HEADER / SIDEBAR ── */
+.hdr{background:linear-gradient(160deg,#0e280e,#1a3d1a 60%,#2a5a2a);padding:14px 16px 0;flex-shrink:0;}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.logo-name{color:#fff;font-size:15px;font-weight:700;}
+.logo-sub{color:rgba(255,255,255,.5);font-size:8px;letter-spacing:.3px;}
+.hdr-date{font-size:10px;color:rgba(255,255,255,.55);}
+.hdr-sem{font-size:9px;color:rgba(255,255,255,.35);}
+.pills{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px;}
+.pills::-webkit-scrollbar{display:none;}
+.pill{padding:6px 13px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;border:none;background:rgba(255,255,255,.15);color:rgba(255,255,255,.78);flex-shrink:0;}
+.pill.on{background:#fff;color:var(--g1);font-weight:700;}
+.pill:hover:not(.on){background:rgba(255,255,255,.25);}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 82px;}
+.scr{display:none;}.scr.on{display:block;}
+
+/* ── CARDS ── */
+.card{background:var(--surf);border-radius:var(--r);padding:15px;margin-bottom:11px;border:1px solid var(--bd);box-shadow:var(--sh);}
+.clbl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:11px;}
+.mg2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.mg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.mc{border-radius:var(--rs);padding:11px 10px;border:1px solid var(--bd);background:var(--surf2);}
+.mc.grn{background:var(--g1);border-color:var(--g1);}
+.mc.gld{background:var(--goldl);border-color:var(--goldb);}
+.mc.blu{background:var(--bluel);border-color:#b0cef0;}
+.mc.red{background:var(--redl);border-color:#f7c1c1;}
+.mv{font-size:17px;font-weight:700;color:var(--tx);line-height:1.1;}
+.mc.grn .mv{color:#fff;}.mc.gld .mv{color:var(--gold);}.mc.blu .mv{color:var(--blue);}.mc.red .mv{color:var(--red);}
+.ml{font-size:9px;color:var(--tx3);margin-top:2px;}
+.mc.grn .ml{color:rgba(255,255,255,.6);}.mc.gld .ml{color:#9a7a10;}.mc.blu .ml{color:#2a5a9a;}.mc.red .ml{color:var(--red);}
+
+/* ── FORMS ── */
+.fld{margin-bottom:9px;}
+.fld label{font-size:11px;font-weight:600;color:var(--tx2);display:block;margin-bottom:3px;}
+.fld input,.fld select,.fld textarea{width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:inherit;font-size:14px;background:var(--surf);color:var(--tx);-webkit-appearance:none;}
+.fld input:focus,.fld select:focus{outline:none;border-color:var(--g2);}
+.fld input:disabled{background:var(--surf2);color:var(--tx3);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.fr4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;}
+
+/* ── QUICK ENTRY (dark card) ── */
+.qe{background:linear-gradient(135deg,#0e280e,#1e4d1e);border-radius:var(--r);padding:14px;margin-bottom:11px;}
+.qe-title{color:rgba(255,255,255,.85);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:11px;}
+.qe-fld label{font-size:10px;color:rgba(255,255,255,.6);display:block;margin-bottom:3px;font-weight:600;}
+.qe-fld input,.qe-fld select{width:100%;padding:9px 11px;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:13px;background:rgba(255,255,255,.1);color:#fff;-webkit-appearance:none;font-family:inherit;}
+.qe-fld select option{color:var(--tx);background:#fff;}
+.qe-fld input::placeholder{color:rgba(255,255,255,.35);}
+.qe-btn{margin-top:11px;padding:11px;border-radius:8px;background:#fff;color:var(--g1);font-weight:700;font-size:13px;border:none;cursor:pointer;width:100%;font-family:inherit;}
+.qe-btn:hover{background:#f0f7ec;}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:12px;border-radius:var(--rs);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;border:none;}
+.btn-g{background:var(--g1);color:#fff;}.btn-g:hover{background:var(--g2);}
+.btn-o{background:transparent;border:1.5px solid var(--g1);color:var(--g1);}
+.bsm{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+.bsm-g{background:var(--gl);color:#356b10;}
+.bsm-b{background:var(--bluel);color:var(--blue);}
+.bsm-r{background:var(--redl);color:var(--red);}
+.bsm-gld{background:var(--goldl);color:var(--gold);}
+
+/* ── ITEMS ── */
+.ri{background:var(--surf);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:8px;}
+.ri-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+.ri-guia{font-weight:700;font-size:14px;}
+.ri-meta{font-size:11px;color:var(--tx3);margin-bottom:7px;line-height:1.5;}
+.ri-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.rn{text-align:center;}
+.rn-v{font-size:12px;font-weight:700;}
+.rn-l{font-size:9px;color:var(--tx3);margin-top:1px;}
+.ri-acts{display:flex;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid var(--bd);flex-wrap:wrap;}
+
+/* ── BADGES ── */
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.bdg-f1{background:var(--gl);color:#2d6a11;}
+.bdg-f2{background:var(--bluel);color:var(--blue);}
+.stag{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--surf2);color:var(--tx2);border:1px solid var(--bd);}
+
+/* ── UTILS ── */
+.msg{padding:9px 13px;border-radius:var(--rs);font-size:13px;margin-bottom:9px;}
+.mok{background:var(--gl);color:#2d6a11;border:1px solid var(--gm);}
+.merr{background:var(--redl);color:var(--red);border:1px solid #f7c1c1;}
+.empty{text-align:center;padding:22px 12px;color:var(--tx3);font-size:13px;}
+.sep{border:none;border-top:1px solid var(--bd);margin:12px 0;}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:var(--surf);border-top:1px solid var(--bd);display:flex;z-index:100;padding-bottom:max(env(safe-area-inset-bottom),6px);}
+.bi{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 2px;cursor:pointer;border:none;background:none;gap:2px;}
+.bi-ic{font-size:20px;line-height:1;}
+.bi-lb{font-size:9px;font-weight:600;color:var(--tx3);}
+.bi.on .bi-lb{color:var(--g2);}
+
+/* ── MODALS ── */
+.edit-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;overflow-y:auto;padding:16px;}
+.edit-modal.on{display:block;}
+.edit-box{background:var(--surf);border-radius:var(--r);padding:20px;max-width:520px;margin:0 auto;}
+.edit-title{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--g1);}
+
+/* ── PROFORMA ── */
+.pfbg{display:none;position:fixed;inset:0;background:#f0ece2;z-index:300;overflow-y:auto;}
+.pfbg.on{display:block;}
+.pf-topbar{background:var(--g1);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;}
+.pf-topbar-title{color:#fff;font-size:13px;font-weight:700;}
+.pf-inner{padding:16px;max-width:680px;margin:0 auto;}
+
+/* ── RESUMEN INLINE ── */
+.rsum{background:var(--surf2);border-radius:var(--rs);padding:11px 13px;margin-top:10px;}
+.rsum-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid var(--bd);}
+.rsum-row:last-child{border-bottom:none;}
+.rsum-row.tot{font-weight:700;font-size:14px;padding-top:8px;}
+.rsum-l{color:var(--tx2);}
+.rsum-v{color:var(--tx);}
+.rsum-v.ok{color:#2d6a11;}
+.rsum-v.bad{color:var(--red);}
+
+/* ── FILTROS ── */
+.fil-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:11px;}
+.fil-row .fld{flex:1;min-width:100px;margin-bottom:0;}
+
+@media print{#app{display:none!important;}.edit-modal{display:none!important;}.pfbg{position:static!important;background:#fff!important;overflow:visible!important;height:auto!important;}.pf-topbar{display:none!important;}.pf-inner{padding:0!important;max-width:100%!important;}.pfbg:not(.on){display:none!important;}}
+
+/* ── MÓVIL: ajustes finos ── */
+@media(max-width:767px){
+  .fr3{grid-template-columns:1fr 1fr;}
+  .fr4{grid-template-columns:1fr 1fr;}
+  .mg3{grid-template-columns:1fr 1fr;}
+  .ri-nums{grid-template-columns:repeat(2,1fr);}
+  .ri-acts{gap:5px;}
+  .ri-acts .bsm{font-size:11px;padding:6px 9px;}
+  .qe-fld input,.qe-fld select{font-size:16px;}/* evita zoom en iOS */
+  .fld input,.fld select,.fld textarea{font-size:16px;}
+  table{font-size:11px;}
+  th,td{padding:6px 4px!important;}
+  .pf-inner{padding:10px!important;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SIDEBAR / HEADER -->
+<div class="hdr">
+  <div class="hdr-row">
+    <div>
+      <div class="logo-name">🍓 FamilyFruit</div>
+      <div class="logo-sub">GESTIÓN DE VENTAS</div>
+    </div>
+    <div style="text-align:right">
+      <div class="hdr-date" id="hdr-date"></div>
+      <div class="hdr-sem" id="hdr-sem"></div>
+      <button id="sync-btn" onclick="sbSincronizar()" style="margin-top:5px;font-size:9px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);border:none;border-radius:5px;padding:3px 8px;cursor:pointer;white-space:nowrap">☁ Sincronizar</button>
+    </div>
+  </div>
+  <div class="pills">
+    <button class="pill on" onclick="nav('dash',this)">🏠 Inicio</button>
+    <button class="pill" onclick="nav('f1',this)">🍒 F1 Comisión</button>
+    <button class="pill" onclick="nav('f2',this)">🛒 F2 Compra/Venta</button>
+    <button class="pill" onclick="nav('rep',this)">📊 Reportes</button>
+    <button class="pill" onclick="nav('xls',this)">📥 Exportar</button>
+    <button class="pill" onclick="nav('cfg',this)">⚙️ Mis datos</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+<!-- DASHBOARD -->
+<div id="scr-dash" class="scr on">
+  <div id="msg-sync" style="margin-bottom:8px"></div>
+  <div id="dash-body"></div>
+</div>
+
+<!-- F1 INGRESO -->
+<div id="scr-f1" class="scr">
+  <div id="msg-f1"></div>
+  <div class="qe">
+    <div class="qe-title">🍒 Nueva venta — F1 Comisión</div>
+    <div class="fr2">
+      <div class="qe-fld"><label>N° Guía *</label><input id="f1-g" placeholder="GU-0001" autocomplete="off"/></div>
+      <div class="qe-fld"><label>Fecha *</label><input id="f1-f" type="date"/></div>
+    </div>
+    <div class="fr2" style="margin-top:7px">
+      <div class="qe-fld"><label>Cliente *</label><input id="f1-cl" placeholder="Nombre cliente"/></div>
+      <div class="qe-fld"><label>Proveedor *</label><select id="f1-pr"><option value="">Seleccionar...</option><option>Cherry Trader</option><option>Ag Quilicura Spa</option><option>Ag La Poza Spa</option><option>Picarquín S.A.</option><option>Fundo Los Limones Spa</option><option>Suri Spa</option></select></div>
+    </div>
+    <div class="fr3" style="margin-top:7px">
+      <div class="qe-fld"><label>Especie *</label>
+        <select id="f1-fr"><option value="">Seleccionar...</option><option>Clementinas</option><option>Mandarinas</option><option>Yanov</option><option>Naranjas</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option><option>Limón</option></select>
+      </div>
+      <div class="qe-fld"><label>Calibre</label>
+        <select id="f1-cal"><option value="">Sin calibre</option><option>Grande</option><option>Mediano</option><option>Chico</option><option>Pre</option><option>Sin cera</option></select>
+      </div>
+      <div class="qe-fld"><label>Kilos *</label><input id="f1-k" type="number" placeholder="0" inputmode="decimal" oninput="calcF1()"/></div>
+    </div>
+    <div class="fr2" style="margin-top:7px">
+      <div class="qe-fld"><label>Precio venta neto ($/kg) *</label><input id="f1-pv" type="number" placeholder="0" inputmode="decimal" oninput="calcF1()"/></div>
+      <div class="qe-fld"><label>IVA %</label><input id="f1-iva" type="number" value="19" inputmode="decimal" oninput="calcF1()"/></div>
+    </div>
+    <div class="fr2" style="margin-top:7px">
+      <div class="qe-fld"><label>Com. fija ($/kg)</label><input id="f1-cf" type="number" value="10" inputmode="decimal" oninput="calcF1()"/></div>
+      <div class="qe-fld"><label>Com. % venta neta</label><input id="f1-cp" type="number" value="10" inputmode="decimal" oninput="calcF1()"/></div>
+    </div>
+    <div id="f1-prev-calc" style="display:none;background:rgba(255,255,255,.1);border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#fff;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;" id="f1-calc-grid"></div>
+    </div>
+    <button class="qe-btn" onclick="addF1()">+ Registrar venta F1</button>
+  </div>
+  <div class="card">
+    <div class="clbl">Ventas F1 registradas</div>
+    <div id="f1-lista"></div>
+  </div>
+</div>
+
+<!-- F2 INGRESO -->
+<div id="scr-f2" class="scr">
+  <div id="msg-f2"></div>
+  <div class="qe">
+    <div class="qe-title">🛒 Nueva operación — F2 Compra/Venta</div>
+    <div class="fr2">
+      <div class="qe-fld"><label>N° Guía *</label><input id="f2-g" placeholder="GU-0001" autocomplete="off"/></div>
+      <div class="qe-fld"><label>Fecha *</label><input id="f2-f" type="date"/></div>
+    </div>
+    <div class="fr2" style="margin-top:7px">
+      <div class="qe-fld"><label>Cliente *</label><input id="f2-cl" placeholder="Nombre cliente"/></div>
+      <div class="qe-fld"><label>Proveedor *</label>
+        <select id="f2-pr"><option value="">Seleccionar...</option><option>Ag Cienago</option><option>Propal</option><option>Tamaya</option><option>Prohens</option></select>
+      </div>
+    </div>
+    <div class="fr3" style="margin-top:7px">
+      <div class="qe-fld"><label>Especie *</label>
+        <select id="f2-fr"><option value="">Seleccionar...</option><option>Clementinas</option><option>Mandarinas</option><option>Yanov</option><option>Naranjas</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option><option>Limón</option></select>
+      </div>
+      <div class="qe-fld"><label>Calibre</label>
+        <select id="f2-cal"><option value="">Sin calibre</option><option>Grande</option><option>Mediano</option><option>Chico</option><option>Pre</option><option>Sin cera</option></select>
+      </div>
+      <div class="qe-fld"><label>Kilos *</label><input id="f2-k" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
+    </div>
+    <div class="fr3" style="margin-top:7px">
+      <div class="qe-fld"><label>P. Compra neto ($/kg) *</label><input id="f2-pc" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
+      <div class="qe-fld"><label>P. Venta neto ($/kg) *</label><input id="f2-pv" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
+      <div class="qe-fld"><label>Gastos op. ($/kg)</label><input id="f2-ga" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
+    </div>
+    <div class="fr2" style="margin-top:7px">
+      <div class="qe-fld"><label>IVA %</label><input id="f2-iva" type="number" value="19" inputmode="decimal" oninput="calcF2()"/></div>
+      <div class="qe-fld"><label>PPM (auto 1% venta)</label><input id="f2-ppm" disabled style="background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);"/></div>
+    </div>
+    <div id="f2-prev-calc" style="display:none;background:rgba(255,255,255,.1);border-radius:8px;padding:10px;margin-top:10px;font-size:12px;color:#fff;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;" id="f2-calc-grid"></div>
+    </div>
+    <button class="qe-btn" onclick="addF2()">+ Registrar operación F2</button>
+  </div>
+  <div class="card">
+    <div class="clbl">Operaciones F2 registradas</div>
+    <div id="f2-lista"></div>
+  </div>
+</div>
+
+<!-- REPORTES -->
+<div id="scr-rep" class="scr">
+  <div class="card">
+    <div class="clbl">Filtros de reporte</div>
+    <div class="fil-row">
+      <div class="fld"><label>Tipo</label>
+        <select id="rf-t" onchange="genRep()">
+          <option value="">Todos</option>
+          <option value="f1">F1 — Comisión</option>
+          <option value="f2">F2 — Compra/Venta</option>
+        </select>
+      </div>
+      <div class="fld"><label>Desde</label><input id="rf-d" type="date" onchange="genRep()"/></div>
+      <div class="fld"><label>Hasta</label><input id="rf-h" type="date" onchange="genRep()"/></div>
+    </div>
+    <div class="fil-row">
+      <div class="fld"><label>Cliente</label><input id="rf-c" placeholder="Filtrar..." oninput="genRep()"/></div>
+      <div class="fld"><label>Especie</label><select id="rf-p" onchange="genRep()"><option value="">Todas</option><option>Clementinas</option><option>Mandarinas</option><option>Yanov</option><option>Naranjas</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option><option>Limón</option></select></div>
+    </div>
+    <button class="btn btn-g" onclick="genRep()">Ver reporte</button>
+  </div>
+  <div id="rep-body"></div>
+</div>
+
+<!-- EXPORTAR -->
+<div id="scr-xls" class="scr">
+  <div class="card">
+    <div class="clbl">Exportar a Excel (.xlsx)</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:12px;line-height:1.6">Descarga con fórmulas reales. Filtra por fecha o deja vacío para exportar todo.</p>
+    <div class="fr2">
+      <div class="fld"><label>Desde (opcional)</label><input id="xd" type="date"/></div>
+      <div class="fld"><label>Hasta (opcional)</label><input id="xh" type="date"/></div>
+    </div>
+  </div>
+  <div class="card" style="border-left:4px solid var(--g1)">
+    <div class="clbl">F1 — Comisión</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:11px">Guías con comisión fija/%, IVA y total a facturar.</p>
+    <button class="btn btn-g" onclick="exportar('f1')">⬇ Descargar Excel F1</button>
+  </div>
+  <div class="card" style="border-left:4px solid var(--blue)">
+    <div class="clbl">F2 — Compra/Venta</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:11px">Hoja interna (margen, PPM) + hoja para proveedor (solo compra con IVA).</p>
+    <button class="btn btn-g" onclick="exportar('f2')">⬇ Descargar Excel F2</button>
+  </div>
+  <div class="card">
+    <div class="clbl">Completo</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:11px">F1 + F2 + resumen general.</p>
+    <button class="btn btn-g" onclick="exportar('full')">⬇ Descargar Excel completo</button>
+  </div>
+  <div id="msg-xls"></div>
+</div>
+
+<!-- CONFIG -->
+<div id="scr-cfg" class="scr">
+  <div class="card">
+    <div class="clbl">Mis datos — aparecen en proformas</div>
+    <div class="fr2">
+      <div class="fld"><label>Nombre / Razón social</label><input id="cfg-nm" placeholder="Tu empresa"/></div>
+      <div class="fld"><label>RUT</label><input id="cfg-rt" placeholder="77.xxx.xxx-x"/></div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>Teléfono</label><input id="cfg-tel" placeholder="+56 9 ..."/></div>
+      <div class="fld"><label>Email</label><input id="cfg-em" placeholder="correo@mail.com"/></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="clbl">Datos bancarios</div>
+    <div class="fr2">
+      <div class="fld"><label>Banco</label><input id="cfg-ba" placeholder="Banco BCI..."/></div>
+      <div class="fld"><label>Tipo de cuenta</label>
+        <select id="cfg-tc">
+          <option>Cuenta corriente</option><option>Cuenta vista</option>
+          <option>Cuenta RUT</option><option>Cuenta de ahorro</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>N° cuenta</label><input id="cfg-cu" placeholder="000000000"/></div>
+      <div class="fld"><label>Titular</label><input id="cfg-ti" placeholder="Nombre titular"/></div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>RUT titular</label><input id="cfg-rb" placeholder="12.345.678-9"/></div>
+      <div class="fld"><label>Email pago</label><input id="cfg-ep" placeholder="pagos@mail.com"/></div>
+    </div>
+  </div>
+  <div class="card" style="border-left:4px solid var(--blue)">
+    <div class="clbl">☁ Supabase — sincronización en la nube</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:11px;line-height:1.6">Ingresa tu URL y clave anónima de Supabase para sincronizar entre celular y PC en tiempo real.</p>
+    <div class="fr2">
+      <div class="fld" style="grid-column:span 2"><label>URL del proyecto (https://xxxx.supabase.co)</label><input id="cfg-sburl" placeholder="https://xxxx.supabase.co" autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+    </div>
+    <div class="fld"><label>API Key (anon / public)</label><input id="cfg-sbkey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off" autocorrect="off" spellcheck="false"/></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <span style="font-size:12px;font-weight:600" id="sync-status">⚪ Sin configurar</span>
+    </div>
+  </div>
+  <button class="btn btn-g" onclick="guardarCfg()">💾 Guardar mis datos</button>
+  <div id="msg-cfg" style="margin-top:8px"></div>
+</div>
+
+</div><!-- /content -->
+
+<!-- BOTTOM NAV (móvil) -->
+<div class="bnav">
+  <button class="bi on" onclick="nav('dash',null,this)"><span class="bi-ic">🏠</span><span class="bi-lb">Inicio</span></button>
+  <button class="bi" onclick="nav('f1',null,this)"><span class="bi-ic">🍒</span><span class="bi-lb">F1</span></button>
+  <button class="bi" onclick="nav('f2',null,this)"><span class="bi-ic">🛒</span><span class="bi-lb">F2</span></button>
+  <button class="bi" onclick="nav('rep',null,this)"><span class="bi-ic">📊</span><span class="bi-lb">Reportes</span></button>
+  <button class="bi" onclick="nav('xls',null,this)"><span class="bi-ic">📥</span><span class="bi-lb">Excel</span></button>
+</div>
+</div><!-- /app -->
+
+<!-- MODAL EDICIÓN F1 -->
+<div class="edit-modal" id="edit-f1">
+  <div class="edit-box">
+    <div class="edit-title">✏️ Editar venta F1</div>
+    <input type="hidden" id="ef1-id"/>
+    <div class="fr2">
+      <div class="fld"><label>N° Guía</label><input id="ef1-g"/></div>
+      <div class="fld"><label>Fecha</label><input id="ef1-f" type="date"/></div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>Cliente</label><input id="ef1-cl"/></div>
+      <div class="fld"><label>Proveedor</label><select id="ef1-pr"><option value="">Seleccionar...</option><option>Cherry Trader</option><option>Ag Quilicura Spa</option><option>Ag La Poza Spa</option><option>Picarquín S.A.</option><option>Fundo Los Limones Spa</option><option>Suri Spa</option></select></div>
+    </div>
+    <div class="fr3">
+      <div class="fld"><label>Especie</label>
+        <select id="ef1-fr"><option value="">Seleccionar...</option><option>Clementinas</option><option>Mandarinas</option><option>Yanov</option><option>Naranjas</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option><option>Limón</option></select>
+      </div>
+      <div class="fld"><label>Calibre</label>
+        <select id="ef1-cal"><option value="">Sin calibre</option><option>Grande</option><option>Mediano</option><option>Chico</option><option>Pre</option><option>Sin cera</option></select>
+      </div>
+      <div class="fld"><label>Kilos</label><input id="ef1-k" type="number" inputmode="decimal"/></div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>Precio venta ($/kg)</label><input id="ef1-pv" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>IVA %</label><input id="ef1-iva" type="number"/></div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>Comisión fija ($/kg)</label><input id="ef1-cf" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>Comisión % venta neta</label><input id="ef1-cp" type="number" inputmode="decimal"/></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-o" style="flex:1" onclick="closeEdit('edit-f1')">Cancelar</button>
+      <button class="btn btn-g" style="flex:1" onclick="saveF1()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN F2 -->
+<div class="edit-modal" id="edit-f2">
+  <div class="edit-box">
+    <div class="edit-title">✏️ Editar operación F2</div>
+    <input type="hidden" id="ef2-id"/>
+    <div class="fr2">
+      <div class="fld"><label>N° Guía</label><input id="ef2-g"/></div>
+      <div class="fld"><label>Fecha</label><input id="ef2-f" type="date"/></div>
+    </div>
+    <div class="fr2">
+      <div class="fld"><label>Cliente</label><input id="ef2-cl"/></div>
+      <div class="fld"><label>Proveedor</label>
+        <select id="ef2-pr"><option value="">Seleccionar...</option><option>Ag Cienago</option><option>Propal</option><option>Tamaya</option><option>Prohens</option></select>
+      </div>
+    </div>
+    <div class="fr3">
+      <div class="fld"><label>Especie</label>
+        <select id="ef2-fr"><option value="">Seleccionar...</option><option>Clementinas</option><option>Mandarinas</option><option>Yanov</option><option>Naranjas</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option><option>Limón</option></select>
+      </div>
+      <div class="fld"><label>Calibre</label>
+        <select id="ef2-cal"><option value="">Sin calibre</option><option>Grande</option><option>Mediano</option><option>Chico</option><option>Pre</option><option>Sin cera</option></select>
+      </div>
+      <div class="fld"><label>Kilos</label><input id="ef2-k" type="number" inputmode="decimal"/></div>
+    </div>
+    <div class="fr3">
+      <div class="fld"><label>P. Compra ($/kg)</label><input id="ef2-pc" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>P. Venta ($/kg)</label><input id="ef2-pv" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>Gastos ($/kg)</label><input id="ef2-ga" type="number" inputmode="decimal"/></div>
+    </div>
+    <div class="fld"><label>IVA %</label><input id="ef2-iva" type="number"/></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-o" style="flex:1" onclick="closeEdit('edit-f2')">Cancelar</button>
+      <button class="btn btn-g" style="flex:1" onclick="saveF2()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL ADJUNTOS -->
+<div class="edit-modal" id="modal-adj">
+  <div class="edit-box" style="max-width:480px">
+    <div class="edit-title">📎 Adjunto — Guía <span id="adj-guia-label"></span></div>
+    <input type="hidden" id="adj-id"/>
+    <input type="hidden" id="adj-tipo"/>
+    <div class="fld" style="margin-bottom:11px">
+      <label>Foto (fruta, guía, comprobante)</label>
+      <div style="margin-top:6px">
+        <button class="bsm bsm-b" style="width:100%;justify-content:center;padding:12px" onclick="document.getElementById('adj-file').click()">
+          📷 Tomar foto o subir imagen
+        </button>
+        <input type="file" id="adj-file" accept="image/*" capture="environment" style="display:none" onchange="adjPreview(this)"/>
+      </div>
+      <img id="adj-prev" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-top:9px;display:none;border:1px solid var(--bd)"/>
+    </div>
+    <div class="fld">
+      <label>Justificación / Observación</label>
+      <textarea id="adj-obs" style="width:100%;height:80px;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:inherit;font-size:13px;resize:none" placeholder="Ej: fruta con daño por helada, precio rebajado..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-o" style="flex:1" onclick="closeEdit('modal-adj')">Cancelar</button>
+      <button class="btn btn-g" style="flex:1" onclick="adjGuardar()">💾 Guardar adjunto</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFORMA -->
+<div class="pfbg" id="m-pf">
+  <div class="pf-topbar">
+    <div class="pf-topbar-title" id="pf-tit">Proforma</div>
+    <div style="display:flex;gap:8px">
+      <button class="bsm bsm-g" onclick="document.getElementById('m-pf').classList.remove('on')">← Volver</button>
+      <button class="bsm bsm-gld" onclick="window.print()">🖨 Imprimir / PDF</button>
+    </div>
+  </div>
+  <div class="pf-inner" id="pf-in"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var LOGO='data:image/jpeg;base64,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';
+
+var IVA=0.19,PPM=0.01;
+// ══ SUPABASE CONFIG ══ (reemplaza con tus datos)
+var SB_URL = 'https://ruujgblgrxdkktgctppv.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+var SB_OK  = false; // se activa automático si URL y KEY están completos
+
+// ══ DATOS EN MEMORIA ══
+var f1=[],f2=[];
+var cfg={nm:'',rt:'',tel:'',em:'',ba:'',tc:'Cuenta corriente',cu:'',ti:'',rb:'',ep:''};
+
+/* ══ UTILS ══ */
+var f=function(n){return Math.round(n).toLocaleString('es-CL');};
+var fm=function(n){return '$'+f(n);};
+var today=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var v=function(id){return document.getElementById(id).value;};
+var sv=function(id,val){document.getElementById(id).value=val;};
+var pf=function(id){return parseFloat(document.getElementById(id).value)||0;};
+var ge=function(id){return document.getElementById(id);};
+var setMsg=function(id,txt,t){var el=ge(id);el.innerHTML=txt?'<div class="msg m'+t+'">'+txt+'</div>':'';if(txt){setTimeout(function(){el.innerHTML='';},3500);}};
+
+/* ══ NAV ══ */
+function nav(id,pill,bi){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  ge('scr-'+id).classList.add('on');
+  if(pill){document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('on');});pill.classList.add('on');}
+  if(bi){document.querySelectorAll('.bi').forEach(function(b){b.classList.remove('on');});bi.classList.add('on');}
+  var map={dash:renderDash,rep:genRep,cfg:loadCfg};
+  if(map[id]){map[id]();}
+}
+
+function closeEdit(id){ge(id).classList.remove('on');}
+
+/* ══ PERSISTENCIA LOCAL ══ */
+function lsGuardar(){
+  try{
+    localStorage.setItem('ff_f1',JSON.stringify(f1));
+    localStorage.setItem('ff_f2',JSON.stringify(f2));
+    localStorage.setItem('ff_cfg',JSON.stringify(cfg));
+  }catch(e){console.warn('localStorage lleno',e);}
+}
+function lsCargar(){
+  try{
+    var d1=localStorage.getItem('ff_f1');if(d1){f1=JSON.parse(d1);}
+    var d2=localStorage.getItem('ff_f2');if(d2){f2=JSON.parse(d2);}
+    var dc=localStorage.getItem('ff_cfg');if(dc){cfg=JSON.parse(dc);}
+  }catch(e){console.warn('Error cargando localStorage',e);}
+}
+
+/* ══ SUPABASE ══ */
+function sbOk(){return SB_OK&&SB_URL&&SB_KEY;}
+
+async function sbGuardar(tabla,rec){
+  if(!sbOk()) return;
+  try{
+    // Convertir adj.foto (base64 pesado) a referencia corta para no saturar BD
+    var r=Object.assign({},rec);
+    if(r.adj&&r.adj.foto){r.adj=Object.assign({},r.adj,{foto:'[foto_local]'});}
+    await fetch(SB_URL+'/rest/v1/'+tabla+'?on_conflict=id',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(r)
+    });
+  }catch(e){console.warn('Supabase guardar:',e);}
+}
+
+async function sbEliminar(tabla,id){
+  if(!sbOk()) return;
+  try{
+    await fetch(SB_URL+'/rest/v1/'+tabla+'?id=eq.'+id,{
+      method:'DELETE',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+    });
+  }catch(e){console.warn('Supabase eliminar:',e);}
+}
+
+async function sbGuardarCfg(){
+  if(!sbOk()) return;
+  try{
+    await fetch(SB_URL+'/rest/v1/config_app?on_conflict=id',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({id:1,datos:JSON.stringify(cfg)})
+    });
+  }catch(e){console.warn('Supabase cfg:',e);}
+}
+
+async function sbSincronizar(){
+  if(!sbOk()){
+    setMsg('msg-sync','⚠️ Supabase no configurado — usando datos locales','err');
+    return;
+  }
+  ge('sync-btn').textContent='⏳ Sincronizando...';
+  try{
+    // Bajar F1
+    var r1=await fetch(SB_URL+'/rest/v1/ventas_f1?select=*&order=fecha.asc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    var d1=await r1.json();
+    // Bajar F2
+    var r2=await fetch(SB_URL+'/rest/v1/ventas_f2?select=*&order=fecha.asc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    var d2=await r2.json();
+    if(Array.isArray(d1)&&d1.length){
+      // Merge: mantener fotos locales que no están en la nube
+      var localFotos={};
+      f1.forEach(function(x){if(x.adj&&x.adj.foto&&x.adj.foto!=='[foto_local]'){localFotos[x.id]=x.adj.foto;}});
+      f1=d1;
+      f1.forEach(function(x){if(localFotos[x.id]){if(!x.adj)x.adj={};x.adj.foto=localFotos[x.id];}});
+    }
+    if(Array.isArray(d2)&&d2.length){
+      var localFotos2={};
+      f2.forEach(function(x){if(x.adj&&x.adj.foto&&x.adj.foto!=='[foto_local]'){localFotos2[x.id]=x.adj.foto;}});
+      f2=d2;
+      f2.forEach(function(x){if(localFotos2[x.id]){if(!x.adj)x.adj={};x.adj.foto=localFotos2[x.id];}});
+    }
+    // Bajar configuración (banco, datos contacto)
+    var rc=await fetch(SB_URL+'/rest/v1/config_app?id=eq.1&select=datos',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    var dc=await rc.json();
+    if(Array.isArray(dc)&&dc.length&&dc[0].datos){
+      try{cfg=JSON.parse(dc[0].datos);}catch(e){}
+    }
+    lsGuardar();
+    renderDash();renderF1Lista();renderF2Lista();
+    var ahora=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    setMsg('msg-sync','✅ Sincronizado con la nube — '+ahora,'ok');
+    ge('sync-btn').textContent='☁ Sincronizar';
+  }catch(e){
+    setMsg('msg-sync','❌ Error: '+e.message,'err');
+    ge('sync-btn').textContent='☁ Sincronizar';
+  }
+}
+
+// Subir todos los datos locales a Supabase (primer sync o recuperación)
+async function sbSubirTodo(){
+  if(!sbOk()){alert('Configura Supabase primero en Mis datos');return;}
+  if(!confirm('¿Subir TODOS los registros locales a Supabase? Esto sobreescribe la nube.')) return;
+  ge('sync-btn').textContent='⏳ Subiendo...';
+  try{
+    for(var i=0;i<f1.length;i++){await sbGuardar('ventas_f1',f1[i]);}
+    for(var j=0;j<f2.length;j++){await sbGuardar('ventas_f2',f2[j]);}
+    setMsg('msg-sync','✅ '+f1.length+' reg. F1 y '+f2.length+' reg. F2 subidos','ok');
+    ge('sync-btn').textContent='☁ Sincronizar';
+  }catch(e){
+    setMsg('msg-sync','❌ Error subiendo: '+e.message,'err');
+    ge('sync-btn').textContent='☁ Sincronizar';
+  }
+}
+
+/* ══ INIT ══ */
+document.addEventListener('DOMContentLoaded',function(){
+  ['f1-f','f2-f'].forEach(function(id){var el=ge(id);if(el){el.value=today();}});
+  var d=new Date();
+  ge('hdr-date').textContent=d.toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  ge('hdr-sem').textContent='Sem '+Math.ceil((((d-new Date(d.getFullYear(),0,1))/86400000)+new Date(d.getFullYear(),0,1).getDay()+1)/7)+'-'+d.getFullYear();
+  // Cargar datos locales primero (instantáneo)
+  lsCargar();
+  // Verificar si Supabase está configurado
+  SB_OK = !!(SB_URL && SB_KEY && SB_URL.includes('supabase.co'));
+  renderDash();renderF1Lista();renderF2Lista();
+  // Si hay Supabase, sincronizar automáticamente al abrir
+  if(SB_OK){setTimeout(sbSincronizar,800);}
+  else{
+    var hasLocal=f1.length||f2.length;
+    if(!hasLocal){setMsg('msg-sync','💾 Datos guardados localmente. Configura Supabase en ⚙️ Mis datos para sincronizar con la nube.','ok');}
+  }
+});
+
+/* ══ CALCS LIVE ══ */
+function calcF1(){
+  var kg=pf('f1-k'),pv=pf('f1-pv'),cf=pf('f1-cf'),cp=pf('f1-cp'),iva=pf('f1-iva')/100;
+  if(!kg||!pv) return;
+  var vn=kg*pv,comF=kg*cf,comP=vn*(cp/100),neto=comF+comP,ivaAmt=neto*iva,total=neto+ivaAmt;
+  ge('f1-prev-calc').style.display='block';
+  ge('f1-calc-grid').innerHTML=
+    '<div>Venta bruta: <b>'+fm(vn)+'</b></div>'+
+    '<div>Com. fija: <b>'+fm(comF)+'</b></div>'+
+    '<div>Com. '+cp+'%: <b>'+fm(comP)+'</b></div>'+
+    '<div>Neto: <b>'+fm(neto)+'</b></div>'+
+    '<div>IVA '+Math.round(iva*100)+'%: <b>'+fm(ivaAmt)+'</b></div>'+
+    '<div style="color:#b8d98b">TOTAL: <b>'+fm(total)+'</b></div>';
+}
+function calcF2(){
+  var kg=pf('f2-k'),pc=pf('f2-pc'),pv=pf('f2-pv'),ga=pf('f2-ga'),iva=pf('f2-iva')/100;
+  if(!kg) return;
+  var venta=kg*pv,compra=kg*pc,ppm=venta*PPM,margen=venta-compra-ppm-(ga*kg),ivaAmt=venta*iva,total=venta+ivaAmt;
+  sv('f2-ppm',fm(ppm));
+  ge('f2-prev-calc').style.display='block';
+  ge('f2-calc-grid').innerHTML=
+    '<div>Venta bruta: <b>'+fm(venta)+'</b></div>'+
+    '<div>Compra: <b>('+fm(compra)+')</b></div>'+
+    '<div>PPM 1%: <b>('+fm(ppm)+')</b></div>'+
+    '<div>Gastos: <b>('+fm(ga*kg)+')</b></div>'+
+    '<div style="color:'+(margen>=0?'#b8d98b':'#f88')+'">Margen: <b>'+fm(margen)+'</b></div>'+
+    '<div>Total factura: <b>'+fm(total)+'</b></div>';
+}
+
+/* ══ F1 CRUD ══ */
+function addF1(){
+  var guia=v('f1-g').trim();if(!guia){setMsg('msg-f1','Ingresa N° de guía','err');return;}
+  var kg=pf('f1-k'),pv=pf('f1-pv');if(!kg||!pv){setMsg('msg-f1','Completa kilos y precio','err');return;}
+  var cf=pf('f1-cf'),cp=pf('f1-cp'),iva=pf('f1-iva'),vn=kg*pv,comF=kg*cf,comP=vn*(cp/100),neto=comF+comP,ivaAmt=neto*(iva/100),total=neto+ivaAmt;
+  var rec={id:Date.now(),guia:guia,fecha:v('f1-f'),cliente:v('f1-cl'),proveedor:v('f1-pr'),fruta:v('f1-fr'),calibre:v('f1-cal'),kilos:kg,pventa:pv,cfija:cf,cpct:cp,iva:iva,bruta:vn,comF:comF,comP:comP,neto:neto,ivaAmt:ivaAmt,total:total};
+  f1.push(rec);
+  ['f1-g','f1-cl','f1-k','f1-pv'].forEach(function(id){sv(id,'');});sv('f1-fr','');sv('f1-cal','');sv('f1-pr','');
+  ge('f1-prev-calc').style.display='none';
+  ge('f1-f').value=today();
+  lsGuardar();if(sbOk())sbGuardar('ventas_f1',rec);
+renderF1Lista();renderDash();setMsg('msg-f1','Venta F1 guardada ✓','ok');
+}
+function delF1(id){
+  if(!confirm('¿Eliminar esta venta?')){return;}
+  var _del1=id;f1=f1.filter(function(x){return x.id!==id;});lsGuardar();if(sbOk())sbEliminar('ventas_f1',_del1);
+renderF1Lista();renderDash();
+}
+function openEditF1(id){
+  var x=f1.find(function(r){return r.id===id;});if(!x){return;}
+  sv('ef1-id',id);sv('ef1-g',x.guia);sv('ef1-f',x.fecha);sv('ef1-cl',x.cliente);sv('ef1-pr',x.proveedor);
+  sv('ef1-fr',x.fruta||'');sv('ef1-cal',x.calibre||'');sv('ef1-k',x.kilos);sv('ef1-pv',x.pventa);sv('ef1-cf',x.cfija);sv('ef1-cp',x.cpct);sv('ef1-iva',x.iva);
+  ge('edit-f1').classList.add('on');
+}
+function saveF1(){
+  var id=parseInt(v('ef1-id'));
+  var kg=pf('ef1-k'),pv=pf('ef1-pv'),cf=pf('ef1-cf'),cp=pf('ef1-cp'),iva=pf('ef1-iva');
+  var vn=kg*pv,comF=kg*cf,comP=vn*(cp/100),neto=comF+comP,ivaAmt=neto*(iva/100),total=neto+ivaAmt;
+  var x=f1.find(function(r){return r.id===id;});
+  if(x){Object.assign(x,{guia:v('ef1-g'),fecha:v('ef1-f'),cliente:v('ef1-cl'),proveedor:v('ef1-pr'),fruta:v('ef1-fr'),calibre:v('ef1-cal'),kilos:kg,pventa:pv,cfija:cf,cpct:cp,iva:iva,bruta:vn,comF:comF,comP:comP,neto:neto,ivaAmt:ivaAmt,total:total});}
+  lsGuardar();if(sbOk()&&x)sbGuardar('ventas_f1',x);
+closeEdit('edit-f1');renderF1Lista();renderDash();
+}
+function renderF1Lista(){
+  var el=ge('f1-lista');
+  if(!f1.length){el.innerHTML='<div class="empty">Sin ventas F1 registradas</div>';return;}
+  el.innerHTML=f1.map(function(x){
+    return '<div class="ri">'+
+      '<div class="ri-top"><span class="ri-guia">Guía '+x.guia+'</span><span class="bdg bdg-f1">F1 Comisión</span></div>'+
+      '<div class="ri-meta">'+x.fecha+' · '+x.fruta+(x.calibre?' · Cal: '+x.calibre:'')+' · Cliente: '+(x.cliente||'—')+' · Prov: '+(x.proveedor||'—')+'</div>'+
+      '<div class="ri-nums">'+
+        '<div class="rn"><div class="rn-v">'+f(x.kilos)+' kg</div><div class="rn-l">Kilos</div></div>'+
+        '<div class="rn"><div class="rn-v">'+fm(x.pventa)+'</div><div class="rn-l">Precio/kg</div></div>'+
+        '<div class="rn"><div class="rn-v" style="color:#2d6a11">'+fm(x.neto)+'</div><div class="rn-l">Neto</div></div>'+
+        '<div class="rn"><div class="rn-v" style="color:var(--g1)">'+fm(x.total)+'</div><div class="rn-l">c/IVA</div></div>'+
+      '</div>'+
+      '<div class="ri-acts">'+
+        '<button class="bsm bsm-b" onclick="openEditF1('+x.id+')">✏️ Editar</button>'+
+        '<button class="bsm bsm-g" onclick="pfF1Individual('+x.id+')">📄 Proforma</button>'+
+        '<button class="bsm" style="background:var(--goldl);color:var(--gold)" onclick="adjAbrir('+x.id+',\'f1\')">📎 '+(x.adj?'Ver adjunto':'Adjuntar')+'</button>'+
+        '<button class="bsm bsm-r" onclick="delF1('+x.id+')">🗑 Eliminar</button>'+
+      '</div>'+
+      (x.adj?'<div style="margin-top:9px;border-top:1px solid var(--bd);padding-top:9px">'+(x.adj.foto?'<img src="'+x.adj.foto+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:6px"/>':'')+(x.adj.obs?'<div style="font-size:11px;color:var(--tx2);background:var(--goldl);border-radius:6px;padding:6px 9px">📝 '+x.adj.obs+'</div>':'')+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+/* ══ F2 CRUD ══ */
+function addF2(){
+  var guia=v('f2-g').trim();if(!guia){setMsg('msg-f2','Ingresa N° de guía','err');return;}
+  var kg=pf('f2-k');if(!kg){setMsg('msg-f2','Completa los kilos','err');return;}
+  var pc=pf('f2-pc'),pv=pf('f2-pv'),ga=pf('f2-ga'),iva=pf('f2-iva');
+  var venta=kg*pv,compra=kg*pc,ppm=venta*PPM,margen=venta-compra-ppm-(ga*kg),ivaAmt=venta*(iva/100),total=venta+ivaAmt;
+  var rec={id:Date.now(),guia:guia,fecha:v('f2-f'),cliente:v('f2-cl'),proveedor:v('f2-pr'),fruta:v('f2-fr'),calibre:v('f2-cal'),kilos:kg,pcompra:pc,pventa:pv,gastos:ga,iva:iva,venta:venta,compra:compra,ppm:ppm,margen:margen,ivaAmt:ivaAmt,total:total};
+  f2.push(rec);
+  ['f2-g','f2-cl','f2-k','f2-pc','f2-pv','f2-ga'].forEach(function(id){sv(id,'');});sv('f2-fr','');sv('f2-pr','');sv('f2-cal','');
+  ge('f2-prev-calc').style.display='none';ge('f2-ppm').value='';
+  ge('f2-f').value=today();
+  lsGuardar();if(sbOk())sbGuardar('ventas_f2',rec);
+renderF2Lista();renderDash();setMsg('msg-f2','Operación F2 guardada ✓','ok');
+}
+function delF2(id){
+  if(!confirm('¿Eliminar esta operación?')){return;}
+  var _del2=id;f2=f2.filter(function(x){return x.id!==id;});lsGuardar();if(sbOk())sbEliminar('ventas_f2',_del2);
+renderF2Lista();renderDash();
+}
+function openEditF2(id){
+  var x=f2.find(function(r){return r.id===id;});if(!x){return;}
+  sv('ef2-id',id);sv('ef2-g',x.guia);sv('ef2-f',x.fecha);sv('ef2-cl',x.cliente);sv('ef2-pr',x.proveedor);
+  sv('ef2-pr',x.proveedor||'');sv('ef2-fr',x.fruta||'');sv('ef2-cal',x.calibre||'');sv('ef2-k',x.kilos);sv('ef2-pc',x.pcompra);sv('ef2-pv',x.pventa);sv('ef2-ga',x.gastos);sv('ef2-iva',x.iva);
+  ge('edit-f2').classList.add('on');
+}
+function saveF2(){
+  var id=parseInt(v('ef2-id'));
+  var kg=pf('ef2-k'),pc=pf('ef2-pc'),pv=pf('ef2-pv'),ga=pf('ef2-ga'),iva=pf('ef2-iva');
+  var venta=kg*pv,compra=kg*pc,ppm=venta*PPM,margen=venta-compra-ppm-(ga*kg),ivaAmt=venta*(iva/100),total=venta+ivaAmt;
+  var x=f2.find(function(r){return r.id===id;});
+  if(x){Object.assign(x,{guia:v('ef2-g'),fecha:v('ef2-f'),cliente:v('ef2-cl'),proveedor:v('ef2-pr'),fruta:v('ef2-fr'),calibre:v('ef2-cal'),kilos:kg,pcompra:pc,pventa:pv,gastos:ga,iva:iva,venta:venta,compra:compra,ppm:ppm,margen:margen,ivaAmt:ivaAmt,total:total});}
+  lsGuardar();if(sbOk()&&x)sbGuardar('ventas_f2',x);
+closeEdit('edit-f2');renderF2Lista();renderDash();
+}
+function renderF2Lista(){
+  var el=ge('f2-lista');
+  if(!f2.length){el.innerHTML='<div class="empty">Sin operaciones F2 registradas</div>';return;}
+  el.innerHTML=f2.map(function(x){
+    return '<div class="ri">'+
+      '<div class="ri-top"><span class="ri-guia">Guía '+x.guia+'</span><span class="bdg bdg-f2">F2 C/V</span></div>'+
+      '<div class="ri-meta">'+x.fecha+' · '+x.fruta+' · Cliente: '+(x.cliente||'—')+' · Prov: '+(x.proveedor||'—')+'</div>'+
+      '<div class="ri-nums">'+
+        '<div class="rn"><div class="rn-v">'+f(x.kilos)+' kg</div><div class="rn-l">Kilos</div></div>'+
+        '<div class="rn"><div class="rn-v">'+fm(x.pventa)+'</div><div class="rn-l">P.Venta/kg</div></div>'+
+        '<div class="rn"><div class="rn-v" style="color:'+(x.margen>=0?'#2d6a11':'var(--red)')+'">'+fm(x.margen)+'</div><div class="rn-l">Margen</div></div>'+
+        '<div class="rn"><div class="rn-v" style="color:var(--blue)">'+fm(x.total)+'</div><div class="rn-l">Factura</div></div>'+
+      '</div>'+
+      '<div class="ri-acts">'+
+        '<button class="bsm bsm-b" onclick="openEditF2('+x.id+')">✏️ Editar</button>'+
+        '<button class="bsm bsm-g" onclick="pfF2Individual('+x.id+',\'yo\')">📄 Mi proforma</button>'+
+        '<button class="bsm bsm-gld" onclick="pfF2Individual('+x.id+',\'prov\')">🧾 Proveedor</button>'+
+        '<button class="bsm" style="background:var(--goldl);color:var(--gold)" onclick="adjAbrir('+x.id+',\'f2\')">📎 '+(x.adj?'Ver adjunto':'Adjuntar')+'</button>'+
+        '<button class="bsm bsm-r" onclick="delF2('+x.id+')">🗑 Eliminar</button>'+
+      '</div>'+
+      (x.adj?'<div style="margin-top:9px;border-top:1px solid var(--bd);padding-top:9px">'+(x.adj.foto?'<img src="'+x.adj.foto+'" style="width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:6px"/>':'')+(x.adj.obs?'<div style="font-size:11px;color:var(--tx2);background:var(--goldl);border-radius:6px;padding:6px 9px">📝 '+x.adj.obs+'</div>':'')+'</div>':'')+
+      '</div>';
+  }).join('');
+}
+
+/* ══ DASHBOARD ══ */
+function renderDash(){
+  var tKF1=f1.reduce(function(a,x){return a+x.kilos;},0);
+  var tNF1=f1.reduce(function(a,x){return a+x.neto;},0);
+  var tTF1=f1.reduce(function(a,x){return a+x.total;},0);
+  var tKF2=f2.reduce(function(a,x){return a+x.kilos;},0);
+  var tMF2=f2.reduce(function(a,x){return a+x.margen;},0);
+  var tTF2=f2.reduce(function(a,x){return a+x.total;},0);
+  ge('dash-body').innerHTML=
+    (f1.length?'<div class="card" style="border-left:4px solid var(--g1)">'+
+      '<div class="clbl">🍒 F1 — Gestión comercial (Comisión)</div>'+
+      '<div class="mg2">'+
+        '<div class="mc"><div class="mv">'+f1.length+'</div><div class="ml">Guías</div></div>'+
+        '<div class="mc"><div class="mv">'+f(tKF1)+' kg</div><div class="ml">Kilos totales</div></div>'+
+        '<div class="mc"><div class="mv">'+fm(Math.round(tNF1))+'</div><div class="ml">Comisión neta</div></div>'+
+        '<div class="mc grn"><div class="mv">'+fm(Math.round(tTF1))+'</div><div class="ml">Total a facturar</div></div>'+
+      '</div></div>':'<div class="card"><div class="empty">Sin ventas F1 — <button class="bsm bsm-g" onclick="nav(\'f1\',document.querySelectorAll(\'.pill\')[1])">+ Agregar</button></div></div>')+
+    (f2.length?'<div class="card" style="border-left:4px solid var(--blue)">'+
+      '<div class="clbl">🛒 F2 — Compra / Venta</div>'+
+      '<div class="mg2">'+
+        '<div class="mc"><div class="mv">'+f2.length+'</div><div class="ml">Operaciones</div></div>'+
+        '<div class="mc"><div class="mv">'+f(tKF2)+' kg</div><div class="ml">Kilos totales</div></div>'+
+        '<div class="mc '+(tMF2>=0?'grn':'red')+'"><div class="mv">'+fm(Math.round(tMF2))+'</div><div class="ml">Margen neto</div></div>'+
+        '<div class="mc blu"><div class="mv">'+fm(Math.round(tTF2))+'</div><div class="ml">Facturas emitidas</div></div>'+
+      '</div></div>':'<div class="card"><div class="empty">Sin operaciones F2 — <button class="bsm bsm-b" onclick="nav(\'f2\',document.querySelectorAll(\'.pill\')[2])">+ Agregar</button></div></div>');
+}
+
+/* ══ REPORTES ══ */
+function filtrar(arr){
+  var tipo=v('rf-t'),de=v('rf-d'),ha=v('rf-h'),cl=v('rf-c').toLowerCase(),pr=v('rf-p');
+  var base=[];
+  if(!tipo||tipo==='f1') f1.forEach(function(x){base.push(Object.assign({},x,{_tipo:'f1'}));});
+  if(!tipo||tipo==='f2') f2.forEach(function(x){base.push(Object.assign({},x,{_tipo:'f2'}));});
+  return base.filter(function(x){
+    if(de&&x.fecha<de) return false;
+    if(ha&&x.fecha>ha) return false;
+    if(cl&&!(x.cliente||'').toLowerCase().includes(cl)) return false;
+    if(pr&&(x.fruta||'')!==pr) return false;
+    return true;
+  });
+}
+
+function genRep(){
+  var data=filtrar([]),cont=ge('rep-body');
+  if(!data.length){cont.innerHTML='<div class="card"><div class="empty">Sin registros para los filtros seleccionados.</div></div>';return;}
+  var tipo=v('rf-t');
+  var desde=v('rf-d'),hasta=v('rf-h');
+  var perLabel=desde&&hasta?desde+' al '+hasta:(desde?'Desde '+desde:(hasta?'Hasta '+hasta:'Todo el período'));
+
+  // TOTALES
+  var df1=data.filter(function(x){return x._tipo==='f1';}),df2=data.filter(function(x){return x._tipo==='f2';});
+  var tKg=data.reduce(function(a,x){return a+x.kilos;},0);
+  var tNF1=df1.reduce(function(a,x){return a+x.neto;},0),tTF1=df1.reduce(function(a,x){return a+x.total;},0);
+  var tMF2=df2.reduce(function(a,x){return a+x.margen;},0),tTF2=df2.reduce(function(a,x){return a+x.total;},0);
+
+  // MÉTRICA CARDS
+  var cards='<div class="mg3" style="margin-bottom:11px">';
+  cards+='<div class="mc"><div class="mv">'+data.length+'</div><div class="ml">Registros</div></div>';
+  cards+='<div class="mc"><div class="mv">'+f(tKg)+' kg</div><div class="ml">Kilos totales</div></div>';
+  if(df1.length) cards+='<div class="mc grn"><div class="mv">'+fm(Math.round(tTF1))+'</div><div class="ml">F1 a facturar</div></div>';
+  if(df2.length) cards+='<div class="mc '+(tMF2>=0?'grn':'red')+'"><div class="mv">'+fm(Math.round(tMF2))+'</div><div class="ml">F2 margen neto</div></div>';
+  cards+='</div>';
+
+  // BOTONES PROFORMA PERÍODO
+  var pfBtns='';
+  if(!tipo||tipo==='f1'){pfBtns+='<button class="bsm bsm-g" onclick="pfF1Periodo()">📄 Proforma cobro F1</button>';}
+  if(tipo==='f2'){pfBtns+='<button class="bsm bsm-g" onclick="pfF2Periodo(\'yo\')">📄 Proforma F2 para mí</button><button class="bsm bsm-gld" onclick="pfF2Periodo(\'prov\')">🧾 Proforma F2 proveedor</button>';}
+
+  // TABLA DETALLE
+  var filas=data.map(function(x){
+    var res=x._tipo==='f1'?x.neto:x.margen;
+    return '<tr>'+
+      '<td>'+x.guia+'</td>'+
+      '<td>'+x.fecha+'</td>'+
+      '<td><span class="bdg bdg-'+x._tipo+'">'+(x._tipo==='f1'?'F1':'F2')+'</span></td>'+
+      '<td>'+(x.fruta||'—')+(x.calibre?' <span class="stag">'+x.calibre+'</span>':'')+' </td>'+
+      '<td>'+(x.cliente||'—')+'</td>'+
+      '<td>'+(x.proveedor||'—')+'</td>'+
+      '<td style="text-align:right">'+f(x.kilos)+' kg</td>'+
+      '<td style="text-align:right;color:'+(res>=0?'#2d6a11':'var(--red)')+'">'+fm(res)+'</td>'+
+      '<td style="text-align:right">'+fm(x.total)+'</td>'+
+      '<td>'+
+        (x._tipo==='f1'?'<button class="bsm bsm-g" onclick="pfF1Individual('+x.id+')">📄</button>':
+          '<button class="bsm bsm-g" onclick="pfF2Individual('+x.id+',\'yo\')">📄</button>'+
+          '<button class="bsm bsm-gld" onclick="pfF2Individual('+x.id+',\'prov\')">🧾</button>')+
+        '<button class="bsm" style="background:var(--goldl);color:var(--gold)" onclick="adjAbrir('+x.id+',\''+x._tipo+'\')" title="Adjunto">📎</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+
+  cont.innerHTML=cards+
+    '<div class="card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:11px">'+
+        '<div class="clbl" style="margin:0">Detalle — '+perLabel+'</div>'+
+        '<div style="display:flex;gap:7px;flex-wrap:wrap">'+pfBtns+'</div>'+
+      '</div>'+
+      '<div style="overflow-x:auto">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead><tr style="background:var(--g1);color:#fff">'+
+          '<th style="padding:8px 6px;text-align:left">Guía</th>'+
+          '<th style="padding:8px 6px;text-align:left">Fecha</th>'+
+          '<th style="padding:8px 6px;text-align:left">Tipo</th>'+
+          '<th style="padding:8px 6px;text-align:left">Fruta</th>'+
+          '<th style="padding:8px 6px;text-align:left">Cliente</th>'+
+          '<th style="padding:8px 6px;text-align:left">Proveedor</th>'+
+          '<th style="padding:8px 6px;text-align:right">Kilos</th>'+
+          '<th style="padding:8px 6px;text-align:right">Resultado</th>'+
+          '<th style="padding:8px 6px;text-align:right">Total c/IVA</th>'+
+          '<th style="padding:8px 6px"></th>'+
+        '</tr></thead>'+
+        '<tbody>'+filas+'</tbody>'+
+      '</table></div>'+
+    '</div>'+
+    // GRÁFICOS
+    '<div class="card" style="border-left:4px solid var(--g1)">'+
+      '<div class="clbl">📊 Composición por especie — Kilos + Precio promedio acumulado (Torta)</div>'+
+      '<div style="position:relative;height:280px"><canvas id="ch-torta"></canvas></div>'+
+      '<div id="ch-torta-tabla" style="margin-top:12px;font-size:11px"></div>'+
+    '</div>'+
+    '<div class="card" style="border-left:4px solid var(--blue)">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">'+
+        '<div class="clbl" style="margin:0">📈 Volumen (barras) + Precio/kg (línea) por fecha</div>'+
+        '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">'+
+          '<label style="font-size:11px;font-weight:600;color:var(--tx2)">Especie:</label>'+
+          '<select id="graf-esp" onchange="renderGrafBars()" style="font-size:12px;padding:5px 8px;border:1.5px solid var(--bd);border-radius:8px;background:var(--surf);color:var(--tx)">'+
+            '<option value="">Todas</option>'+
+          '</select>'+
+          '<label style="font-size:11px;font-weight:600;color:var(--tx2)">Calibre:</label>'+
+          '<select id="graf-cal" onchange="renderGrafBars()" style="font-size:12px;padding:5px 8px;border:1.5px solid var(--bd);border-radius:8px;background:var(--surf);color:var(--tx)">'+
+            '<option value="">Todos</option>'+
+          '</select>'+
+        '</div>'+
+      '</div>'+
+      '<div style="position:relative;height:260px"><canvas id="ch-vol"></canvas></div>'+
+      '<p style="font-size:10px;color:var(--tx3);margin-top:7px">Barras = kilos (eje izq.) · Línea = precio/kg (eje der.) · Tooltip muestra precio acumulado al pasar el mouse</p>'+
+    '</div>';
+
+  window._grafData = data;
+
+  ['ch-torta','ch-vol'].forEach(function(id){
+    var existing=Chart.getChart(id);if(existing){existing.destroy();}
+  });
+
+  var COLS=['#1a3d1a','#1a5fa5','#b8860b','#922','#2d6a2d','#0f6e56','#533ab7','#c25b00','#5a1a5a','#2d6a11'];
+
+  // ── TORTA: kilos + precio promedio ponderado acumulado por especie ──
+  var byE={};// {kg, sumPxKg}
+  data.forEach(function(x){
+    var e=x.fruta||'Sin especie';
+    if(!byE[e]){byE[e]={kg:0,sumPK:0};}
+    byE[e].kg+=x.kilos;
+    byE[e].sumPK+=(x.pventa||0)*x.kilos;
+  });
+  var espLabels=Object.keys(byE);
+  var espVals=espLabels.map(function(e){return Math.round(byE[e].kg);});
+  var espPrecios=espLabels.map(function(e){
+    return byE[e].kg>0?Math.round(byE[e].sumPK/byE[e].kg):0;
+  });
+  var totKg=espVals.reduce(function(a,b){return a+b;},0);
+
+  new Chart(document.getElementById('ch-torta'),{
+    type:'doughnut',
+    data:{labels:espLabels,datasets:[{data:espVals,backgroundColor:COLS.slice(0,espLabels.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{font:{size:11},padding:8,
+          generateLabels:function(chart){
+            return espLabels.map(function(e,i){
+              return{text:e+' — $'+espPrecios[i].toLocaleString('es-CL')+'/kg',
+                fillStyle:COLS[i%COLS.length],strokeStyle:'#fff',lineWidth:2,index:i};
+            });
+          }
+        }},
+        tooltip:{callbacks:{
+          label:function(ctx){
+            var e=espLabels[ctx.dataIndex];
+            var pct=Math.round(ctx.raw/totKg*100);
+            return[
+              e+': '+ctx.raw.toLocaleString('es-CL')+' kg ('+pct+'%)',
+              'Precio promedio acumulado: $'+espPrecios[ctx.dataIndex].toLocaleString('es-CL')+'/kg'
+            ];
+          }
+        }}
+      }
+    }
+  });
+
+  // Tabla resumen bajo la torta
+  var tablaEl=document.getElementById('ch-torta-tabla');
+  if(tablaEl){
+    tablaEl.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:11px">'+
+      '<thead><tr style="background:var(--g1);color:#fff">'+
+        '<th style="padding:6px 8px;text-align:left">Especie</th>'+
+        '<th style="padding:6px 8px;text-align:right">Kilos</th>'+
+        '<th style="padding:6px 8px;text-align:right">% mix</th>'+
+        '<th style="padding:6px 8px;text-align:right">P° prom. acumulado</th>'+
+      '</tr></thead><tbody>'+
+      espLabels.map(function(e,i){
+        var pct=Math.round(byE[e].kg/totKg*100);
+        return '<tr style="border-bottom:1px solid var(--bd)">'+
+          '<td style="padding:6px 8px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+COLS[i%COLS.length]+';margin-right:6px;vertical-align:middle"></span>'+e+'</td>'+
+          '<td style="padding:6px 8px;text-align:right">'+Math.round(byE[e].kg).toLocaleString('es-CL')+' kg</td>'+
+          '<td style="padding:6px 8px;text-align:right">'+pct+'%</td>'+
+          '<td style="padding:6px 8px;text-align:right;font-weight:700;color:var(--g1)">$'+espPrecios[i].toLocaleString('es-CL')+'/kg</td>'+
+        '</tr>';
+      }).join('')+
+      '<tr style="background:var(--surf2);font-weight:700">'+
+        '<td style="padding:6px 8px">TOTAL</td>'+
+        '<td style="padding:6px 8px;text-align:right">'+totKg.toLocaleString('es-CL')+' kg</td>'+
+        '<td style="padding:6px 8px;text-align:right">100%</td>'+
+        '<td style="padding:6px 8px;text-align:right;color:var(--g1)">$'+
+          (totKg>0?Math.round(espLabels.reduce(function(a,e){return a+byE[e].sumPK;},0)/totKg):0).toLocaleString('es-CL')+'/kg'+
+        '</td>'+
+      '</tr>'+
+    '</tbody></table>';
+  }
+
+  // Poblar selectores especie y calibre
+  var selE=document.getElementById('graf-esp');
+  var selC=document.getElementById('graf-cal');
+  if(selE){
+    while(selE.options.length>1){selE.remove(1);}
+    espLabels.forEach(function(e){var o=document.createElement('option');o.value=e;o.textContent=e;selE.appendChild(o);});
+  }
+  if(selC){
+    while(selC.options.length>1){selC.remove(1);}
+    var cals={};
+    data.forEach(function(x){if(x.calibre){cals[x.calibre]=1;}});
+    Object.keys(cals).forEach(function(cal){var o=document.createElement('option');o.value=cal;o.textContent=cal;selC.appendChild(o);});
+  }
+
+  // ── BARRAS + LÍNEA filtrable por especie y calibre ──
+  window.renderGrafBars=function(){
+    var existing=Chart.getChart('ch-vol');if(existing){existing.destroy();}
+    var eF=document.getElementById('graf-esp')?document.getElementById('graf-esp').value:'';
+    var cF=document.getElementById('graf-cal')?document.getElementById('graf-cal').value:'';
+    var dFilt=window._grafData.filter(function(x){
+      if(eF&&(x.fruta||'')!==eF) return false;
+      if(cF&&(x.calibre||'')!==cF) return false;
+      return true;
+    });
+    if(!dFilt.length){
+      var cv=document.getElementById('ch-vol');
+      if(cv){var ctx2=cv.getContext('2d');ctx2.clearRect(0,0,cv.width,cv.height);
+        ctx2.font='13px sans-serif';ctx2.fillStyle='#aaa';ctx2.textAlign='center';
+        ctx2.fillText('Sin datos para este filtro',cv.width/2,cv.height/2);}
+      return;
+    }
+    var sorted=dFilt.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');});
+    var labels=sorted.map(function(x){return (x.fecha?x.fecha.slice(5):'?')+'\n'+x.guia;});
+    var kilos=sorted.map(function(x){return x.kilos;});
+    var precios=sorted.map(function(x){return x.pventa||0;});
+
+    // Precio promedio acumulado progresivo
+    var acumKg=0,acumPK=0;
+    var preciosAcum=sorted.map(function(x){
+      acumKg+=x.kilos;acumPK+=(x.pventa||0)*x.kilos;
+      return acumKg>0?Math.round(acumPK/acumKg):0;
+    });
+
+    var espColorMap={};
+    espLabels.forEach(function(e,i){espColorMap[e]=COLS[i%COLS.length];});
+    var barColors=sorted.map(function(x){return espColorMap[x.fruta||'Sin especie']||COLS[0];});
+
+    new Chart(document.getElementById('ch-vol'),{
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'Kilos',data:kilos,backgroundColor:barColors,borderRadius:5,
+         borderSkipped:false,yAxisID:'yKg',order:3},
+        {label:'Precio/kg guía ($)',data:precios,type:'line',borderColor:'#b8860b',
+         backgroundColor:'rgba(184,134,11,.08)',pointBackgroundColor:'#b8860b',
+         pointRadius:4,tension:.3,fill:false,yAxisID:'yPrecio',order:2,borderWidth:2,borderDash:[4,3]},
+        {label:'Precio acumulado ($)',data:preciosAcum,type:'line',borderColor:'#1a3d1a',
+         backgroundColor:'rgba(26,61,26,.0)',pointBackgroundColor:'#1a3d1a',
+         pointRadius:4,tension:.4,fill:false,yAxisID:'yPrecio',order:1,borderWidth:2.5}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{position:'bottom',labels:{font:{size:11},padding:10}},
+          tooltip:{callbacks:{
+            label:function(ctx){
+              if(ctx.datasetIndex===0) return 'Kilos: '+ctx.raw.toLocaleString('es-CL')+' kg';
+              if(ctx.datasetIndex===1) return 'Precio guía: $'+ctx.raw.toLocaleString('es-CL')+'/kg';
+              return 'Precio acumulado: $'+ctx.raw.toLocaleString('es-CL')+'/kg';
+            },
+            title:function(items){
+              var x=sorted[items[0].dataIndex];
+              return (x.fruta||'?')+(x.calibre?' · '+x.calibre:'')+' — Guía '+x.guia+' ('+x.fecha+')';
+            }
+          }}
+        },
+        scales:{
+          x:{ticks:{font:{size:9},maxRotation:45,autoSkip:false}},
+          yKg:{position:'left',beginAtZero:true,
+            title:{display:true,text:'Kilos',font:{size:10},color:'var(--tx3)'},
+            ticks:{font:{size:10},callback:function(v){return v.toLocaleString('es-CL')+' kg';}}},
+          yPrecio:{position:'right',beginAtZero:false,
+            title:{display:true,text:'$/kg',font:{size:10},color:'#b8860b'},
+            ticks:{font:{size:10},color:'#b8860b',callback:function(v){return '$'+v.toLocaleString('es-CL');}},
+            grid:{drawOnChartArea:false}}
+        }
+      }
+    });
+  };
+
+  window.renderGrafBars();
+}
+
+/* ══ PROFORMAS ══ */
+var hoy=function(){return new Date().toLocaleDateString('es-CL');};
+var ffd=function(f){if(!f){return '—';}try{return new Date(f+'T00:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'long',year:'numeric'});}catch(e){return f;}};
+function bancoHtml(){
+  if(!cfg.ba&&!cfg.cu){return '';}
+  return '<div style="border:2px solid #1a3d1a;border-radius:10px;padding:14px;margin-bottom:16px">'+
+    '<div style="font-size:11px;font-weight:800;color:#1a3d1a;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Datos para transferencia</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">'+
+      (cfg.ba?'<div><span style="color:#888">Banco:</span> <strong>'+cfg.ba+'</strong></div>':'')+
+      (cfg.tc?'<div><span style="color:#888">Tipo:</span> <strong>'+cfg.tc+'</strong></div>':'')+
+      (cfg.cu?'<div><span style="color:#888">N° cuenta:</span> <strong>'+cfg.cu+'</strong></div>':'')+
+      (cfg.ti?'<div><span style="color:#888">Titular:</span> <strong>'+cfg.ti+'</strong></div>':'')+
+      (cfg.rb?'<div><span style="color:#888">RUT:</span> <strong>'+cfg.rb+'</strong></div>':'')+
+      (cfg.ep?'<div><span style="color:#888">Email pago:</span> <strong>'+cfg.ep+'</strong></div>':'')+
+    '</div></div>';
+}
+function logoHdr(){
+  return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #1a3d1a;margin-bottom:18px">'+
+    '<img src="'+LOGO+'" style="height:58px;object-fit:contain"/>'+
+    '<div style="text-align:right;font-size:11px;color:#666">'+
+      (cfg.tel?'<div>📞 '+cfg.tel+'</div>':'')+
+      (cfg.em?'<div>✉ '+cfg.em+'</div>':'')+
+      (cfg.rt?'<div>RUT: '+cfg.rt+'</div>':'')+
+    '</div>'+
+  '</div>';
+}
+function pfBase(tit,html){
+  ge('pf-tit').textContent=tit;
+  ge('pf-in').innerHTML='<div style="font-family:-apple-system,Arial,Helvetica,sans-serif;color:#1a1a18;font-size:13px;background:#fff;max-width:720px;margin:0 auto;padding:24px;border-radius:12px">'+html+'</div>';
+  ge('m-pf').classList.add('on');
+}
+
+function pfF1Individual(id){
+  var x=f1.find(function(r){return r.id===id;});if(!x){return;}
+  var html=logoHdr()+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">'+
+      '<div><div style="font-size:20px;font-weight:800;color:#1a3d1a">LIQUIDACIÓN DE VENTAS</div>'+
+      '<div style="font-size:11px;color:#666;margin-top:3px">N° LIQ-'+String(x.id).slice(-6)+' · Emisión: '+hoy()+'</div></div>'+
+      '<div style="text-align:right;font-size:12px;color:#555">'+
+        '<div>Guía: <strong>'+x.guia+'</strong></div>'+
+        '<div>Fecha: <strong>'+ffd(x.fecha)+'</strong></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">'+'<div style="font-size:11px;opacity:.7">GUÍA LIQUIDADA</div>'+'<div style="font-size:22px;font-weight:900;letter-spacing:1px">'+x.guia+'</div>'+'<div style="font-size:11px;opacity:.7">'+ffd(x.fecha)+'</div>'+'</div>'+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:14px">'+
+      '<div><span style="color:#888">Cliente:</span> <strong>'+x.cliente+'</strong></div>'+
+      '<div><span style="color:#888">Proveedor:</span> <strong>'+x.proveedor+'</strong></div>'+
+    '</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">'+
+      '<thead><tr style="background:#1a3d1a;color:#fff">'+
+        '<th style="padding:9px 6px;text-align:left">Fruta</th><th style="padding:9px 6px;text-align:right">Kilos</th>'+
+        '<th style="padding:9px 6px;text-align:right">Precio/kg</th><th style="padding:9px 6px;text-align:left">Desglose comisión</th><th style="padding:9px 6px;text-align:right">Total comisión</th>'+
+      '</tr></thead><tbody>'+
+        '<tr style="border-bottom:1px solid #e8f5e8">'+
+          '<td style="padding:8px 6px">'+x.fruta+'</td>'+
+          '<td style="padding:8px 6px;text-align:right">'+f(x.kilos)+' kg</td>'+
+          '<td style="padding:8px 6px;text-align:right">'+fm(x.pventa)+'</td>'+
+          '<td style="padding:8px 6px;font-size:11px;color:#555">'+f(x.kilos)+' kg × $'+x.cfija+' = '+fm(x.comF)+'<br>Venta neta '+fm(x.bruta)+' × '+x.cpct+'% = '+fm(Math.round(x.comP))+'</td>'+
+          '<td style="padding:8px 6px;text-align:right;font-weight:800;color:#1a3d1a;font-size:15px">'+fm(x.neto)+'</td>'+
+        '</tr>'+
+      '</tbody></table>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. fija $'+x.cfija+'/kg</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">'+fm(x.comF)+'</div></div>'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. '+x.cpct+'% venta neta</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">'+fm(Math.round(x.comP))+'</div></div>'+
+      '<div style="border:1px solid #b8d98b;border-radius:8px;padding:10px;text-align:center;background:#eaf3de"><div style="font-size:10px;color:#2d6a11;margin-bottom:3px">IVA '+x.iva+'%</div><div style="font-size:17px;font-weight:800;color:#2d6a11">'+fm(Math.round(x.ivaAmt))+'</div></div>'+
+    '</div>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<div><div style="font-size:12px;opacity:.85">TOTAL A FACTURAR — SERVICIOS DE COMERCIALIZACIÓN</div><div style="font-size:10px;opacity:.6">Honorarios netos '+fm(x.neto)+' + IVA '+fm(Math.round(x.ivaAmt))+'</div></div>'+
+      '<div style="font-size:28px;font-weight:900">'+fm(Math.round(x.total))+'</div>'+
+    '</div>'+
+
+    // Bloque adjunto en proforma individual
+    +(x.adj?'<div style="margin-top:18px;padding-top:14px;border-top:2px solid #eee">'+
+      '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px">Evidencia fotográfica</div>'+
+      (x.adj.foto?'<img src="'+x.adj.foto+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:8px"/>':'')+
+      (x.adj.obs?'<div style="background:#fef9e7;border:1px solid #e8d090;border-radius:7px;padding:10px 13px;font-size:12px;color:#7a6000">📝 '+x.adj.obs+'</div>':'')+
+    '</div>':'')+
+    bancoHtml()+
+    '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:10px">Venta bruta referencial: '+fm(x.bruta)+' · Proforma sin validez tributaria. Generado '+hoy()+'</div>';
+  pfBase('Liquidación F1 — Guía '+x.guia,html);
+}
+
+function pfF2Individual(id,dest){
+  var x=f2.find(function(r){return r.id===id;});if(!x){return;}
+  var html='';
+  if(dest==='prov'){
+    var compraIva=x.compra*(x.iva/100),totalProv=x.compra+compraIva;
+    html=logoHdr()+
+      '<div style="margin-bottom:14px"><div style="font-size:20px;font-weight:800;color:#1a5fa5">LIQUIDACIÓN DE COMPRA</div>'+
+      '<div style="font-size:11px;color:#666;margin-top:3px">Guía '+x.guia+' · Emisión: '+hoy()+'</div></div>'+
+      '<div style="background:#1a5fa5;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">'+'<div style="font-size:11px;opacity:.7">GUÍA LIQUIDADA</div>'+'<div style="font-size:22px;font-weight:900;letter-spacing:1px">'+x.guia+'</div>'+'<div style="font-size:11px;opacity:.7">'+ffd(x.fecha)+'</div>'+'</div>'+'<div style="font-size:12px;margin-bottom:12px">'+
+        '<div><span style="color:#888">Proveedor:</span> <strong>'+x.proveedor+'</strong></div>'+
+        '<div><span style="color:#888">Fecha:</span> <strong>'+ffd(x.fecha)+'</strong></div>'+
+      '</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">'+
+        '<thead><tr style="background:#1a5fa5;color:#fff">'+
+          '<th style="padding:9px 6px">Fruta</th><th style="padding:9px 6px;text-align:right">Kilos</th>'+
+          '<th style="padding:9px 6px;text-align:right">P.Compra neto/kg</th><th style="padding:9px 6px;text-align:right">Total neto</th>'+
+          '<th style="padding:9px 6px;text-align:right">IVA '+x.iva+'%</th><th style="padding:9px 6px;text-align:right">Total c/IVA</th>'+
+        '</tr></thead><tbody>'+
+          '<tr><td style="padding:8px 6px">'+x.fruta+'</td>'+
+          '<td style="padding:8px 6px;text-align:right">'+f(x.kilos)+' kg</td>'+
+          '<td style="padding:8px 6px;text-align:right">'+fm(x.pcompra)+'</td>'+
+          '<td style="padding:8px 6px;text-align:right">'+fm(x.compra)+'</td>'+
+          '<td style="padding:8px 6px;text-align:right">'+fm(Math.round(compraIva))+'</td>'+
+          '<td style="padding:8px 6px;text-align:right;font-weight:800;color:#1a5fa5;font-size:15px">'+fm(Math.round(totalProv))+'</td></tr>'+
+        '</tbody></table>'+
+      '<div style="background:#1a5fa5;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+        '<div><div style="font-size:12px;opacity:.85">TOTAL A PAGAR AL PROVEEDOR</div><div style="font-size:10px;opacity:.6">Neto '+fm(x.compra)+' + IVA '+fm(Math.round(compraIva))+'</div></div>'+
+        '<div style="font-size:28px;font-weight:900">'+fm(Math.round(totalProv))+'</div>'+
+      '</div>'+
+      bancoHtml()+
+      '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:10px">Proforma sin validez tributaria. No incluye precio de venta. Generado '+hoy()+'</div>';
+    pfBase('Proforma proveedor — Guía '+x.guia,html);
+  } else {
+    html=logoHdr()+
+      '<div style="margin-bottom:14px"><div style="font-size:20px;font-weight:800;color:#1a3d1a">ANÁLISIS OPERACIÓN — F2</div>'+
+      '<div style="font-size:11px;color:#666;margin-top:3px">Guía '+x.guia+' · Emisión: '+hoy()+'</div></div>'+
+      '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">'+'<div style="font-size:11px;opacity:.7">GUÍA LIQUIDADA</div>'+'<div style="font-size:22px;font-weight:900;letter-spacing:1px">'+x.guia+'</div>'+'<div style="font-size:11px;opacity:.7">'+ffd(x.fecha)+'</div>'+'</div>'+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:14px">'+
+        '<div><span style="color:#888">Cliente:</span> <strong>'+x.cliente+'</strong></div>'+
+        '<div><span style="color:#888">Proveedor:</span> <strong>'+x.proveedor+'</strong></div>'+
+        '<div><span style="color:#888">Fruta:</span> <strong>'+x.fruta+'</strong></div>'+
+        '<div><span style="color:#888">Kilos:</span> <strong>'+f(x.kilos)+' kg</strong></div>'+
+      '</div>'+
+      '<div style="margin-bottom:16px">'+
+        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px"><span>Ingreso venta ('+f(x.kilos)+' kg × $'+x.pventa+'/kg)</span><span>'+fm(x.venta)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px;color:#666"><span>(-) Costo compra ('+f(x.kilos)+' kg × $'+x.pcompra+'/kg)</span><span>('+fm(x.compra)+')</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px;color:#666"><span>(-) PPM 1%</span><span>('+fm(Math.round(x.ppm))+')</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:13px;color:#666"><span>(-) Gastos operación ($'+x.gastos+'/kg)</span><span>('+fm(x.gastos*x.kilos)+')</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:15px;font-weight:800;color:'+(x.margen>=0?'#1a3d1a':'#922')+'"><span>Margen neto</span><span>'+fm(Math.round(x.margen))+'</span></div>'+
+      '</div>'+
+      '<div style="background:#1a3d1a;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+        '<div><div style="font-size:12px;opacity:.85">TOTAL FACTURA (Venta + IVA '+x.iva+'%)</div><div style="font-size:10px;opacity:.6">Venta neta '+fm(x.venta)+' + IVA '+fm(Math.round(x.ivaAmt))+'</div></div>'+
+        '<div style="font-size:28px;font-weight:900">'+fm(Math.round(x.total))+'</div>'+
+      '</div>'+
+      bancoHtml()+
+      '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:10px">Documento interno. Proforma sin validez tributaria. Generado '+hoy()+'</div>';
+    pfBase('Análisis F2 — Guía '+x.guia,html);
+  }
+}
+
+function pfF1Periodo(){
+  // Usa EXACTAMENTE los mismos filtros activos del reporte
+  var de=v('rf-d'),ha=v('rf-h'),cl=v('rf-c').toLowerCase(),esp=v('rf-p');
+  var datos=f1.filter(function(x){
+    if(de&&x.fecha<de) return false;
+    if(ha&&x.fecha>ha) return false;
+    if(cl&&!(x.cliente||'').toLowerCase().includes(cl)) return false;
+    if(esp&&(x.fruta||'')!==esp) return false;
+    return true;
+  });
+  if(!datos.length){alert('Sin datos F1 para los filtros seleccionados.');return;}
+
+  var tKg=datos.reduce(function(a,x){return a+x.kilos;},0);
+  var tCF=datos.reduce(function(a,x){return a+x.comF;},0),tCP=datos.reduce(function(a,x){return a+x.comP;},0);
+  var tN=datos.reduce(function(a,x){return a+x.neto;},0),tIva=tN*IVA,tT=tN+tIva;
+
+  // Construir etiquetas de filtros aplicados
+  var perStr=(de?ffd(de):'inicio')+' al '+(ha?ffd(ha):'hoy');
+  var filtrosApl=[];
+  if(de||ha) filtrosApl.push('Período: '+perStr);
+  if(esp) filtrosApl.push('Especie: '+esp);
+  if(cl) filtrosApl.push('Cliente: '+v('rf-c'));
+  var filtrosStr=filtrosApl.length?filtrosApl.join(' · '):'Sin filtros específicos';
+
+  var filas=datos.map(function(x,i){
+    return '<tr style="border-bottom:1px solid #e8f5e8">'+
+      '<td style="padding:7px 5px;font-weight:700;color:#1a3d1a">'+(i+1)+'</td>'+
+      '<td style="padding:7px 5px">'+
+        '<div style="font-weight:700">'+x.guia+'</div>'+
+        '<div style="font-size:10px;color:#888">'+x.fecha+' · '+x.fruta+(x.calibre?' · '+x.calibre:'')+'</div>'+
+      '</td>'+
+      '<td style="padding:7px 5px">'+(x.cliente||'—')+'</td>'+
+      '<td style="padding:7px 5px;text-align:right">'+f(x.kilos)+' kg</td>'+
+      '<td style="padding:7px 5px;text-align:right">'+fm(x.pventa)+'</td>'+
+      '<td style="padding:7px 5px;font-size:10px;color:#555">'+f(x.kilos)+'×$'+x.cfija+'='+fm(x.comF)+'<br>'+fm(x.bruta)+'×'+x.cpct+'%='+fm(Math.round(x.comP))+'</td>'+
+      '<td style="padding:7px 5px;text-align:right;font-weight:800;color:#1a3d1a">'+fm(x.neto)+'</td>'+
+    '</tr>';
+  }).join('');
+
+  var html=logoHdr()+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">'+
+      '<div>'+
+        '<div style="font-size:20px;font-weight:800;color:#1a3d1a">LIQUIDACIÓN DE VENTAS</div>'+
+        '<div style="font-size:11px;color:#666;margin-top:3px">N° LIQ-'+Date.now().toString().slice(-5)+' · Emisión: '+hoy()+'</div>'+
+      '</div>'+
+      '<div style="text-align:right;font-size:11px;color:#666">'+
+        '<div>'+datos.length+' guía'+(datos.length!==1?'s':'')+'</div>'+
+      '</div>'+
+    '</div>'+
+    // Banda guías incluidas
+    '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:11px 16px;margin-bottom:12px">'+
+      '<div style="font-size:10px;opacity:.7;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Guías incluidas en esta liquidación</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      datos.map(function(x){return '<span style="background:rgba(255,255,255,.18);border-radius:5px;padding:3px 9px;font-size:12px;font-weight:700">'+x.guia+'</span>';}).join('')+
+      '</div>'+
+    '</div>'+
+    // Bloque de filtros aplicados — visible en la proforma
+    '<div style="background:#f0f7ec;border:1px solid #b8d98b;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#2d6a11">'+
+      '<strong>Filtros aplicados:</strong> '+filtrosStr+
+    '</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px">'+
+      '<thead><tr style="background:#1a3d1a;color:#fff">'+
+        '<th style="padding:8px 5px;text-align:left">N</th>'+
+        '<th style="padding:8px 5px;text-align:left">Guía / Especie</th>'+
+        '<th style="padding:8px 5px;text-align:left">Cliente</th>'+
+        '<th style="padding:8px 5px;text-align:right">Kilos</th>'+
+        '<th style="padding:8px 5px;text-align:right">Precio/kg</th>'+
+        '<th style="padding:8px 5px;text-align:left">Desglose comisión</th>'+
+        '<th style="padding:8px 5px;text-align:right">Comisión</th>'+
+      '</tr></thead>'+
+      '<tbody>'+filas+'</tbody>'+
+      '<tfoot><tr style="background:#f0f7ee;font-weight:700">'+
+        '<td colspan="3" style="padding:9px 5px">TOTALES — '+datos.length+' guías · '+f(tKg)+' kg</td>'+
+        '<td style="padding:9px 5px;text-align:right">'+f(tKg)+' kg</td><td></td>'+
+        '<td style="padding:9px 5px;font-size:10px;color:#555">Fija: '+fm(Math.round(tCF))+' · %: '+fm(Math.round(tCP))+'</td>'+
+        '<td style="padding:9px 5px;text-align:right;color:#1a3d1a;font-size:14px">'+fm(Math.round(tN))+'</td>'+
+      '</tr></tfoot>'+
+    '</table>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Comisión fija</div><div style="font-size:16px;font-weight:800;color:#1a3d1a">'+fm(Math.round(tCF))+'</div></div>'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Comisión %</div><div style="font-size:16px;font-weight:800;color:#1a3d1a">'+fm(Math.round(tCP))+'</div></div>'+
+      '<div style="border:1px solid #b8d98b;border-radius:8px;padding:10px;text-align:center;background:#eaf3de"><div style="font-size:10px;color:#2d6a11;margin-bottom:3px">IVA 19%</div><div style="font-size:16px;font-weight:800;color:#2d6a11">'+fm(Math.round(tIva))+'</div></div>'+
+    '</div>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<div>'+
+        '<div style="font-size:12px;opacity:.85">TOTAL A FACTURAR — SERVICIOS DE COMERCIALIZACIÓN</div>'+
+        '<div style="font-size:10px;opacity:.6">Honorarios netos '+fm(Math.round(tN))+' + IVA '+fm(Math.round(tIva))+'</div>'+
+      '</div>'+
+      '<div style="font-size:28px;font-weight:900">'+fm(Math.round(tT))+'</div>'+
+    '</div>'+
+    bancoHtml();
+
+  var tituloTab=esp?'Liquidación F1 — '+esp:(de||ha?'Liquidación F1 — '+perStr:'Liquidación F1');
+  pfBase(tituloTab,html);
+}
+
+function pfF2Periodo(dest){
+  var de=v('rf-d'),ha=v('rf-h');
+  var datos=f2.filter(function(x){return (!de||x.fecha>=de)&&(!ha||x.fecha<=ha);});
+  if(!datos.length){alert('Sin datos F2 para el período seleccionado.');return;}
+  var perStr=(de?ffd(de):'Inicio')+' al '+(ha?ffd(ha):'hoy');
+
+  // Banda guías — reutilizable en ambas variantes
+  var bandaGuias='<div style="background:#1a5fa5;color:#fff;border-radius:8px;padding:11px 16px;margin-bottom:12px">'+
+    '<div style="font-size:10px;opacity:.7;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Guías incluidas en esta liquidación</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+    datos.map(function(x){return '<span style="background:rgba(255,255,255,.18);border-radius:5px;padding:3px 9px;font-size:12px;font-weight:700">'+x.guia+'</span>';}).join('')+
+    '</div></div>';
+
+  if(dest==='prov'){
+    var tC=datos.reduce(function(a,x){return a+x.compra;},0),tCI=datos.reduce(function(a,x){return a+x.compra*(x.iva/100);},0);
+    var filas=datos.map(function(x,i){var ci=x.compra*(x.iva/100);return '<tr style="border-bottom:1px solid #eee"><td style="padding:6px">'+(i+1)+'</td><td style="padding:6px;font-weight:700">'+x.guia+'</td><td style="padding:6px">'+x.fecha+'</td><td style="padding:6px">'+x.fruta+'</td><td style="padding:6px;text-align:right">'+f(x.kilos)+' kg</td><td style="padding:6px;text-align:right">'+fm(x.pcompra)+'</td><td style="padding:6px;text-align:right">'+fm(x.compra)+'</td><td style="padding:6px;text-align:right">'+fm(Math.round(ci))+'</td><td style="padding:6px;text-align:right;font-weight:700;color:#1a5fa5">'+fm(Math.round(x.compra+ci))+'</td></tr>';}).join('');
+    var html=logoHdr()+
+      '<div style="margin-bottom:12px"><div style="font-size:20px;font-weight:800;color:#1a5fa5">LIQUIDACIÓN DE COMPRAS — PROVEEDOR</div><div style="font-size:11px;color:#666;margin-top:3px">Período: '+perStr+' · '+datos.length+' registros</div></div>'+
+      bandaGuias+
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px"><thead><tr style="background:#1a5fa5;color:#fff"><th style="padding:7px 5px">N</th><th style="padding:7px 5px">Guía</th><th style="padding:7px 5px">Fecha</th><th style="padding:7px 5px">Fruta</th><th style="padding:7px 5px;text-align:right">Kilos</th><th style="padding:7px 5px;text-align:right">$/kg</th><th style="padding:7px 5px;text-align:right">Neto</th><th style="padding:7px 5px;text-align:right">IVA</th><th style="padding:7px 5px;text-align:right">c/IVA</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr style="background:#e8f1fb;font-weight:700"><td colspan="6" style="padding:8px 5px">TOTALES</td><td style="padding:8px 5px;text-align:right">'+fm(Math.round(tC))+'</td><td style="padding:8px 5px;text-align:right">'+fm(Math.round(tCI))+'</td><td style="padding:8px 5px;text-align:right;color:#1a5fa5;font-size:14px">'+fm(Math.round(tC+tCI))+'</td></tr></tfoot></table>'+
+      '<div style="background:#1a5fa5;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:12px;opacity:.85">TOTAL A PAGAR AL PROVEEDOR</div></div><div style="font-size:28px;font-weight:900">'+fm(Math.round(tC+tCI))+'</div></div>'+bancoHtml();
+    pfBase('Liquidación F2 proveedores — '+perStr,html);
+  } else {
+    var bandaGuias2='<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:11px 16px;margin-bottom:12px">'+
+      '<div style="font-size:10px;opacity:.7;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Guías incluidas en esta liquidación</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      datos.map(function(x){return '<span style="background:rgba(255,255,255,.18);border-radius:5px;padding:3px 9px;font-size:12px;font-weight:700">'+x.guia+'</span>';}).join('')+
+      '</div></div>';
+    var tM=datos.reduce(function(a,x){return a+x.margen;},0);
+    var filas2=datos.map(function(x,i){return '<tr style="border-bottom:1px solid #eee"><td style="padding:5px">'+(i+1)+'</td><td style="padding:5px;font-weight:700">'+x.guia+'</td><td style="padding:5px">'+x.fecha+'</td><td style="padding:5px">'+x.fruta+'</td><td style="padding:5px;text-align:right">'+f(x.kilos)+'</td><td style="padding:5px;text-align:right">'+fm(x.venta)+'</td><td style="padding:5px;text-align:right">('+fm(x.compra)+')</td><td style="padding:5px;text-align:right">('+fm(Math.round(x.ppm))+')</td><td style="padding:5px;text-align:right">('+fm(x.gastos*x.kilos)+')</td><td style="padding:5px;text-align:right;font-weight:700;color:'+(x.margen>=0?'#2d6a11':'#922')+'">'+fm(Math.round(x.margen))+'</td></tr>';}).join('');
+    var html2=logoHdr()+
+      '<div style="margin-bottom:12px"><div style="font-size:20px;font-weight:800;color:#1a3d1a">RESULTADO F2 — ANÁLISIS INTERNO</div><div style="font-size:11px;color:#666;margin-top:3px">Período: '+perStr+' · '+datos.length+' operaciones</div></div>'+
+      bandaGuias2+
+      '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px"><thead><tr style="background:#1a3d1a;color:#fff"><th style="padding:7px 4px">N</th><th style="padding:7px 4px">Guía</th><th style="padding:7px 4px">Fecha</th><th style="padding:7px 4px">Fruta</th><th style="padding:7px 4px;text-align:right">Kg</th><th style="padding:7px 4px;text-align:right">Venta</th><th style="padding:7px 4px;text-align:right">Compra</th><th style="padding:7px 4px;text-align:right">PPM</th><th style="padding:7px 4px;text-align:right">Gastos</th><th style="padding:7px 4px;text-align:right">Margen</th></tr></thead><tbody>'+filas2+'</tbody><tfoot><tr style="background:#f0f7ee;font-weight:700"><td colspan="9" style="padding:8px 4px">MARGEN TOTAL</td><td style="padding:8px 4px;text-align:right;color:'+(tM>=0?'#1a3d1a':'#922')+';font-size:14px">'+fm(Math.round(tM))+'</td></tr></tfoot></table>'+
+      '<div style="background:'+(tM>=0?'#1a3d1a':'#922')+';color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div><div style="font-size:12px;opacity:.85">MARGEN NETO TOTAL DEL PERÍODO</div></div><div style="font-size:28px;font-weight:900">'+fm(Math.round(tM))+'</div></div>';
+    pfBase('Resultado F2 — '+perStr,html2);
+  }
+}
+
+/* ══ EXCEL ══ */
+function exportar(tipo){
+  if(typeof XLSX==='undefined'){setMsg('msg-xls','Cargando librería Excel, intenta en 2 segundos...','err');return;}
+  var de=v('xd'),ha=v('xh');
+  var filtF=function(arr){return arr.filter(function(x){return (!de||x.fecha>=de)&&(!ha||x.fecha<=ha);});};
+  var df1=filtF(f1),df2=filtF(f2);
+  var wb=XLSX.utils.book_new();
+  var _d=new Date();var hoy2=_d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+
+  if((tipo==='f1'||tipo==='full')&&df1.length){
+    var DS=4;
+    var rows=[['FAMILYFRUIT — VENTAS F1 COMISIÓN (Valores netos sin IVA)'],['Generado:',hoy2],[],
+      ['N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','Precio/kg','Venta bruta','Com. fija/kg','Com. fija total','Com. % venta','Comisión neta','IVA %','IVA $','Total a facturar']];
+    df1.forEach(function(x,i){
+      var r=DS+i+1;
+      rows.push([x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.kilos,x.pventa,
+        {f:'F'+r+'*G'+r},x.cfija,{f:'F'+r+'*I'+r},{f:'H'+r+'*('+x.cpct+'/100)'},
+        {f:'J'+r+'+K'+r},x.iva,{f:'L'+r+'*(M'+r+'/100)'},{f:'L'+r+'+N'+r}]);
+    });
+    var last=DS+df1.length;
+    rows.push([]);rows.push(['TOTALES (con filtro)','','','','',{f:'SUBTOTAL(9,F'+(DS+1)+':F'+last+')'},'','',
+      '','',''  ,{f:'SUBTOTAL(9,L'+(DS+1)+':L'+last+')'},'',{f:'SUBTOTAL(9,N'+(DS+1)+':N'+last+')'},{f:'SUBTOTAL(9,O'+(DS+1)+':O'+last+')'}]);
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:11},{wch:18},{wch:18},{wch:14},{wch:8},{wch:11},{wch:13},{wch:10},{wch:11},{wch:12},{wch:13},{wch:7},{wch:11},{wch:14}];
+    ws['!autofilter']={ref:'A4:O4'};
+    XLSX.utils.book_append_sheet(wb,ws,'F1 Comisión');
+  }
+
+  if((tipo==='f2'||tipo==='full')&&df2.length){
+    // Hoja interna
+    var DS2=5;
+    var aV=[['FAMILYFRUIT — F2 ANÁLISIS INTERNO (Confidencial)'],['Generado:',hoy2],[],
+      ['PPM %',PPM,'Cambia este valor si tu tramo PPM cambia'],[],
+      ['N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','P.Compra neto','P.Venta neto','Gastos/kg','Total compra neto','Total venta neto','Gastos total','PPM %','PPM $','Margen/kg','Margen neto total','IVA %','IVA $','Total factura']];
+    df2.forEach(function(x,i){
+      var r=DS2+i;
+      aV.push([x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.kilos,x.pcompra,x.pventa,x.gastos,
+        {f:'F'+r+'*G'+r},{f:'F'+r+'*H'+r},{f:'F'+r+'*I'+r},
+        {f:'$B$4'},{f:'F'+r+'*H'+r+'*$B$4'},
+        {f:'H'+r+'-G'+r+'-I'+r+'-M'+r},{f:'F'+r+'*(H'+r+'-G'+r+'-I'+r+'-M'+r+')'},
+        x.iva,{f:'K'+r+'*(Q'+r+'/100)'},{f:'K'+r+'+R'+r}]);
+    });
+    var lastV=DS2+df2.length-1;
+    aV.push([]);aV.push(['TOTALES (con filtro)','','','','',{f:'SUBTOTAL(9,F'+DS2+':F'+lastV+')'},'','','',
+      {f:'SUBTOTAL(9,J'+DS2+':J'+lastV+')'},{f:'SUBTOTAL(9,K'+DS2+':K'+lastV+')'},{f:'SUBTOTAL(9,L'+DS2+':L'+lastV+')'},
+      '','','',{f:'SUBTOTAL(9,P'+DS2+':P'+lastV+')'},'',{f:'SUBTOTAL(9,R'+DS2+':R'+lastV+')'},{f:'SUBTOTAL(9,S'+DS2+':S'+lastV+')'}]);
+    var wsV=XLSX.utils.aoa_to_sheet(aV);
+    wsV['!cols']=[{wch:12},{wch:11},{wch:16},{wch:16},{wch:12},{wch:7},{wch:12},{wch:12},{wch:9},{wch:13},{wch:13},{wch:11},{wch:6},{wch:11},{wch:11},{wch:13},{wch:6},{wch:11},{wch:13}];
+    wsV['!autofilter']={ref:'A5:S5'};
+    XLSX.utils.book_append_sheet(wb,wsV,'F2 Interno');
+    // Hoja proveedor
+    var CS=5;
+    var aC=[['FAMILYFRUIT — F2 COMPRAS PARA PROVEEDOR (Valores netos sin IVA)'],['Generado:',hoy2],[],
+      ['N° Guía','Fecha','Proveedor','Fruta','Kilos','P.Compra neto/kg','Total neto','IVA %','IVA $','Total c/IVA']];
+    df2.forEach(function(x,i){
+      var r=CS+i;
+      aC.push([x.guia,x.fecha,x.proveedor,x.fruta,x.kilos,x.pcompra,
+        {f:'E'+r+'*F'+r},x.iva,{f:'G'+r+'*(H'+r+'/100)'},{f:'G'+r+'+I'+r}]);
+    });
+    var lastC=CS+df2.length-1;
+    aC.push([]);aC.push(['TOTALES (con filtro)','','','',{f:'SUBTOTAL(9,E'+CS+':E'+lastC+')'},'',{f:'SUBTOTAL(9,G'+CS+':G'+lastC+')'},
+      '',{f:'SUBTOTAL(9,I'+CS+':I'+lastC+')'},{f:'SUBTOTAL(9,J'+CS+':J'+lastC+')'}]);
+    var wsC=XLSX.utils.aoa_to_sheet(aC);
+    wsC['!cols']=[{wch:12},{wch:11},{wch:18},{wch:12},{wch:8},{wch:14},{wch:14},{wch:6},{wch:12},{wch:14}];
+    wsC['!autofilter']={ref:'A4:J4'};
+    XLSX.utils.book_append_sheet(wb,wsC,'F2 Proveedor');
+  }
+
+  if(tipo==='full'&&(df1.length||df2.length)){
+    var tNF1=df1.reduce(function(a,x){return a+x.neto;},0),tTF1=df1.reduce(function(a,x){return a+x.total;},0);
+    var tKF2=df2.reduce(function(a,x){return a+x.kilos;},0),tMF2=df2.reduce(function(a,x){return a+x.margen;},0),tTF2=df2.reduce(function(a,x){return a+x.total;},0);
+    var aR=[['RESUMEN FAMILYFRUIT','Generado: '+hoy2],[],
+      ['F1 — GESTIÓN COMERCIAL (COMISIÓN)'],['Total guías',df1.length],
+      ['Comisión neta ($)',Math.round(tNF1)],['Total a facturar ($)',Math.round(tTF1)],[],
+      ['F2 — COMPRA / VENTA'],['Total operaciones',df2.length],['Total kilos F2',tKF2],
+      ['Margen neto total ($)',Math.round(tMF2)],['Total facturas emitidas ($)',Math.round(tTF2)]];
+    var wsR=XLSX.utils.aoa_to_sheet(aR);wsR['!cols']=[{wch:28},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,wsR,'Resumen');
+  }
+
+  if(!wb.SheetNames.length){setMsg('msg-xls','Sin datos para exportar con los filtros actuales.','err');return;}
+  var nom=tipo==='f1'?'FF_F1':tipo==='f2'?'FF_F2':'FF_Completo';
+  XLSX.writeFile(wb,nom+'_'+hoy2+'.xlsx');
+  setMsg('msg-xls','✅ Excel descargado correctamente','ok');
+}
+
+/* ══ ADJUNTOS ══ */
+function adjAbrir(id,tipo){
+  var arr=tipo==='f1'?f1:f2;
+  var x=arr.find(function(r){return r.id===id;});if(!x){return;}
+  sv('adj-id',id);sv('adj-tipo',tipo);
+  ge('adj-guia-label').textContent=x.guia;
+  sv('adj-obs',x.adj?x.adj.obs:'');
+  var prev=ge('adj-prev');
+  if(x.adj&&x.adj.foto){prev.src=x.adj.foto;prev.style.display='block';}
+  else{prev.src='';prev.style.display='none';}
+  ge('adj-file').value='';
+  ge('modal-adj').classList.add('on');
+}
+function adjPreview(input){
+  var file=input.files[0];if(!file){return;}
+  // Redimensionar a max 1200px para no pesar demasiado
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var MAX=1200,w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      var src=canvas.toDataURL('image/jpeg',0.82);
+      var prev=ge('adj-prev');prev.src=src;prev.style.display='block';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function adjGuardar(){
+  var id=parseInt(v('adj-id')),tipo=v('adj-tipo');
+  var arr=tipo==='f1'?f1:f2;
+  var x=arr.find(function(r){return r.id===id;});if(!x){return;}
+  var prev=ge('adj-prev');
+  var foto=prev.style.display!=='none'&&prev.src?prev.src:null;
+  var obs=v('adj-obs').trim();
+  if(!foto&&!obs){x.adj=null;}
+  else{x.adj={foto:foto,obs:obs,fecha:today()};}
+  lsGuardar();
+  if(tipo==='f1'&&sbOk())sbGuardar('ventas_f1',x);
+  if(tipo==='f2'&&sbOk())sbGuardar('ventas_f2',x);
+  closeEdit('modal-adj');
+  if(tipo==='f1'){renderF1Lista();}else{renderF2Lista();}
+  if(ge('scr-rep').classList.contains('on'))genRep();
+}
+
+/* ══ CONFIG ══ */
+function guardarCfg(){
+  cfg={nm:v('cfg-nm'),rt:v('cfg-rt'),tel:v('cfg-tel'),em:v('cfg-em'),ba:v('cfg-ba'),tc:v('cfg-tc'),cu:v('cfg-cu'),ti:v('cfg-ti'),rb:v('cfg-rb'),ep:v('cfg-ep')};
+  SB_URL=v('cfg-sburl').trim();SB_KEY=v('cfg-sbkey').trim();
+  SB_OK=!!(SB_URL&&SB_KEY&&SB_URL.includes('supabase.co'));
+  lsGuardar();
+  if(sbOk())sbGuardarCfg();
+  setMsg('msg-cfg','✅ Datos guardados correctamente','ok');
+  if(SB_OK)setMsg('msg-cfg','✅ Datos guardados · ☁ Supabase activo','ok');
+}
+function loadCfg(){
+  sv('cfg-nm',cfg.nm);sv('cfg-rt',cfg.rt);sv('cfg-tel',cfg.tel);sv('cfg-em',cfg.em);
+  sv('cfg-ba',cfg.ba);ge('cfg-tc').value=cfg.tc;sv('cfg-cu',cfg.cu);sv('cfg-ti',cfg.ti);sv('cfg-rb',cfg.rb);sv('cfg-ep',cfg.ep);
+  sv('cfg-sburl',SB_URL||'');sv('cfg-sbkey',SB_KEY||'');
+  ge('sync-status').textContent=SB_OK?'☁ Conectado':'⚪ Sin configurar';
+  ge('sync-status').style.color=SB_OK?'#2d6a11':'#aaa';
+}
+</script>
+</body>
+</html>
