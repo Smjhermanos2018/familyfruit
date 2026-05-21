@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FamilyFruit — Portal Proveedores</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde: #2d6a4f;
+    --verde-claro: #52b788;
+    --verde-pale: #d8f3dc;
+    --naranja: #e76f00;
+    --crema: #fefae0;
+    --gris: #6c757d;
+    --rojo: #c0392b;
+    --blanco: #ffffff;
+    --sombra: 0 4px 24px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f0f4f0;
+    min-height: 100vh;
+    color: #1a2e1a;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #52b788 100%);
+  }
+  .login-box {
+    background: var(--blanco);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--verde);
+    letter-spacing: -1px;
+  }
+  .login-logo span {
+    font-size: 0.85rem;
+    color: var(--gris);
+    font-weight: 300;
+  }
+  .login-emoji { font-size: 3rem; display: block; margin-bottom: 8px; }
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--verde);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e8e0;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    transition: border 0.2s;
+    outline: none;
+  }
+  .form-group input:focus { border-color: var(--verde-claro); }
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-login:hover { background: #1b4332; }
+  .btn-login:active { transform: scale(0.98); }
+  .error-msg {
+    background: #fdecea;
+    color: var(--rojo);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    margin-top: 14px;
+    display: none;
+  }
+
+  /* LAYOUT PRINCIPAL */
+  #app { display: none; min-height: 100vh; }
+  .topbar {
+    background: var(--verde);
+    color: white;
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .topbar-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    letter-spacing: -0.5px;
+  }
+  .topbar-brand span { color: var(--verde-claro); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-user { font-size: 0.88rem; opacity: 0.85; }
+  .btn-logout {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.25); }
+
+  .main-content { padding: 32px; max-width: 1200px; margin: 0 auto; }
+
+  /* CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: white;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: var(--sombra);
+    border-left: 4px solid var(--verde-claro);
+  }
+  .stat-card.naranja { border-left-color: var(--naranja); }
+  .stat-card.rojo { border-left-color: var(--rojo); }
+  .stat-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gris); font-weight: 600; margin-bottom: 6px; }
+  .stat-value { font-family: 'DM Serif Display', serif; font-size: 1.9rem; color: #1a2e1a; }
+
+  /* SECCIÓN */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--verde);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* TABLA */
+  .table-wrap {
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--sombra);
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .table-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid #eef2ee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .table-header h3 { font-size: 1rem; font-weight: 600; color: #1a2e1a; }
+  .badge {
+    background: var(--verde-pale);
+    color: var(--verde);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: #f8faf8;
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--gris);
+    font-weight: 600;
+    border-bottom: 1px solid #eef2ee;
+  }
+  td {
+    padding: 13px 16px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #f3f6f3;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafcfa; }
+
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .pill-green { background: #d8f3dc; color: #1b4332; }
+  .pill-red { background: #fdecea; color: #c0392b; }
+  .pill-orange { background: #fff3e0; color: #e76f00; }
+
+  /* BOTONES */
+  .btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--verde); color: white; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-warning { background: var(--naranja); color: white; }
+  .btn-warning:hover { opacity: 0.88; }
+  .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--verde-claro);
+    color: var(--verde);
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    position: relative;
+  }
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--verde); margin-bottom: 20px; }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: #f0f4f0;
+    border: none;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--verde);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  .modal input[type=file], .modal input[type=text], .modal input[type=number], .modal select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e0e8e0;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--verde-claro); }
+  .modal-footer { margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* COMPROBANTE */
+  .comprobante-link {
+    color: var(--verde);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+  .comprobante-link:hover { text-decoration: underline; }
+
+  /* FILTROS */
+  .filtros {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .filtros select, .filtros input {
+    padding: 8px 14px;
+    border: 2px solid #e0e8e0;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    background: white;
+  }
+  .filtros select:focus, .filtros input:focus { border-color: var(--verde-claro); }
+
+  /* RESUMEN PROVEEDOR */
+  .proveedor-header {
+    background: linear-gradient(135deg, var(--verde) 0%, #1b4332 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .proveedor-avatar {
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+  }
+  .proveedor-info h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; }
+  .proveedor-info p { opacity: 0.75; font-size: 0.85rem; margin-top: 2px; }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--gris);
+    font-size: 0.9rem;
+  }
+  .loading::before { content: '⏳ '; }
+
+  /* ADMIN TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; }
+  .tab {
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: white;
+    color: var(--gris);
+    transition: all 0.2s;
+  }
+  .tab.active { background: var(--verde); color: white; font-weight: 600; }
+  .tab:hover:not(.active) { background: #e8f0e8; color: var(--verde); }
+
+  @media (max-width: 600px) {
+    .main-content { padding: 16px; }
+    .topbar { padding: 0 16px; }
+    .proveedor-header { flex-direction: column; text-align: center; }
+    th, td { padding: 10px 10px; font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="login-emoji">🍊</span>
+      <h1>FamilyFruit</h1>
+      <span>Portal de Proveedores</span>
+    </div>
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" id="inp-usuario" placeholder="Ej: cienago" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="inp-clave" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" onclick="login()">Ingresar</button>
+    <div class="error-msg" id="error-msg">Usuario o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">Family<span>Fruit</span></div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <!-- VISTA PROVEEDOR -->
+  <div id="vista-proveedor" style="display:none">
+    <div class="main-content">
+      <div class="proveedor-header">
+        <div class="proveedor-avatar">🏭</div>
+        <div class="proveedor-info">
+          <h2 id="prov-nombre"></h2>
+          <p>Portal de consulta de compras y pagos</p>
+        </div>
+      </div>
+
+      <div class="stat-grid" id="prov-stats"></div>
+
+      <div class="section-title">📦 Mis Compras</div>
+      <div class="filtros">
+        <select id="filtro-especie" onchange="filtrarCompras()">
+          <option value="">Todas las especies</option>
+        </select>
+        <select id="filtro-pagado" onchange="filtrarCompras()">
+          <option value="">Todos</option>
+          <option value="true">Pagados</option>
+          <option value="false">Pendientes</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <h3>Registro de compras</h3>
+          <span class="badge" id="prov-total-badge"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Semana</th>
+                <th>Especie</th>
+                <th>Kilos</th>
+                <th>Precio/kg</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Comprobante</th>
+              </tr>
+            </thead>
+            <tbody id="prov-compras-body">
+              <tr><td colspan="8" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA ADMIN -->
+  <div id="vista-admin" style="display:none">
+    <div class="main-content">
+      <div class="section-title">⚙️ Panel Administrador</div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="adminTab('compras')">📦 Compras</button>
+        <button class="tab" onclick="adminTab('pagos')">💰 Pagos</button>
+      </div>
+
+      <!-- TAB COMPRAS -->
+      <div id="admin-tab-compras">
+        <div class="stat-grid" id="admin-stats"></div>
+        <div class="filtros">
+          <select id="admin-filtro-prov" onchange="filtrarAdmin()">
+            <option value="">Todos los proveedores</option>
+          </select>
+          <select id="admin-filtro-pagado" onchange="filtrarAdmin()">
+            <option value="">Todos</option>
+            <option value="false">Pendientes de pago</option>
+            <option value="true">Pagados</option>
+          </select>
+          <select id="admin-filtro-especie" onchange="filtrarAdmin()">
+            <option value="">Todas las especies</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <h3>Todas las compras</h3>
+            <span class="badge" id="admin-total-badge"></span>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  <th>Fecha</th>
+                  <th>Semana</th>
+                  <th>Especie</th>
+                  <th>Kilos</th>
+                  <th>Precio/kg</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="admin-compras-body">
+                <tr><td colspan="9" class="loading">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB PAGOS -->
+      <div id="admin-tab-pagos" style="display:none">
+        <div class="table-wrap">
+          <div class="table-header">
+            <h3>Historial de pagos</h3>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Proveedor</th>
+                  <th>Monto</th>
+                  <th>Observación</th>
+                </tr>
+              </thead>
+              <tbody id="admin-pagos-body">
+                <tr><td colspan="4" class="loading">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGO -->
+<div class="modal-overlay" id="modal-pago">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModal()">✕</button>
+    <h3>💰 Registrar Pago</h3>
+    <input type="hidden" id="modal-compra-id">
+    <input type="hidden" id="modal-compra-prod">
+
+    <label>Proveedor</label>
+    <input type="text" id="modal-prov-display" disabled style="background:#f8faf8">
+
+    <label>Comprobante (imagen/PDF)</label>
+    <input type="file" id="modal-archivo" accept="image/*,.pdf">
+
+    <label>Número de guía / referencia</label>
+    <input type="text" id="modal-ref" placeholder="Opcional">
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="registrarPago()">✅ Confirmar Pago</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://ruujgblgrxdkktgctppv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const HEADERS = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' };
+
+let usuarioActual = null;
+let todasCompras = [];
+let todasComprasAdmin = [];
+
+// ── SUPABASE HELPERS ──────────────────────────────────────
+async function sbGet(tabla, params = '') {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${tabla}?${params}`, { headers: HEADERS });
+  return r.json();
+}
+async function sbPatch(tabla, id, data) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${tabla}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { ...HEADERS, 'Prefer': 'return=representation' },
+    body: JSON.stringify(data)
+  });
+  return r.json();
+}
+async function sbUpload(bucket, path, file) {
+  const r = await fetch(`${SUPA_URL}/storage/v1/object/${bucket}/${path}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': file.type },
+    body: file
+  });
+  return r.json();
+}
+
+// ── LOGIN ─────────────────────────────────────────────────
+async function login() {
+  const u = document.getElementById('inp-usuario').value.trim();
+  const c = document.getElementById('inp-clave').value.trim();
+  if (!u || !c) return;
+
+  const data = await sbGet('usuarios_portal', `usuario=eq.${u}&clave=eq.${c}&activo=eq.true&select=*`);
+  if (!data || data.length === 0) {
+    document.getElementById('error-msg').style.display = 'block';
+    return;
+  }
+  usuarioActual = data[0];
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbar-user').textContent = usuarioActual.nombre;
+
+  if (usuarioActual.productor === 'ADMIN') {
+    document.getElementById('vista-admin').style.display = 'block';
+    cargarAdmin();
+  } else {
+    document.getElementById('vista-proveedor').style.display = 'block';
+    document.getElementById('prov-nombre').textContent = usuarioActual.nombre;
+    cargarProveedor();
+  }
+}
+
+document.getElementById('inp-clave').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+function logout() {
+  usuarioActual = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('inp-usuario').value = '';
+  document.getElementById('inp-clave').value = '';
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+// ── VISTA PROVEEDOR ───────────────────────────────────────
+async function cargarProveedor() {
+  const prov = usuarioActual.productor;
+  const data = await sbGet('m2_compras', `prod=eq.${encodeURIComponent(prov)}&select=*&order=fecha.desc`);
+  todasCompras = data || [];
+
+  // Stats
+  const total_kilos = todasCompras.reduce((s, r) => s + (parseFloat(r.kilos) || 0), 0);
+  const total_monto = todasCompras.reduce((s, r) => s + ((parseFloat(r.kilos)||0)*(parseFloat(r.pc)||0)), 0);
+  const pendiente = todasCompras.filter(r => !r.pagado).reduce((s,r) => s + ((parseFloat(r.kilos)||0)*(parseFloat(r.pc)||0)), 0);
+
+  document.getElementById('prov-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Kilos Comprados</div><div class="stat-value">${fmt(total_kilos)} kg</div></div>
+    <div class="stat-card naranja"><div class="stat-label">Monto Total</div><div class="stat-value">$${fmtM(total_monto)}</div></div>
+    <div class="stat-card rojo"><div class="stat-label">Pendiente Pago</div><div class="stat-value">$${fmtM(pendiente)}</div></div>
+  `;
+
+  // Filtro especies
+  const especies = [...new Set(todasCompras.map(r => r.especie).filter(Boolean))];
+  const sel = document.getElementById('filtro-especie');
+  especies.forEach(e => { const o = document.createElement('option'); o.value = e; o.textContent = e; sel.appendChild(o); });
+
+  renderProvCompras(todasCompras);
+}
+
+function filtrarCompras() {
+  const esp = document.getElementById('filtro-especie').value;
+  const pag = document.getElementById('filtro-pagado').value;
+  let d = todasCompras;
+  if (esp) d = d.filter(r => r.especie === esp);
+  if (pag !== '') d = d.filter(r => String(r.pagado) === pag);
+  renderProvCompras(d);
+}
+
+function renderProvCompras(data) {
+  document.getElementById('prov-total-badge').textContent = `${data.length} registros`;
+  const tbody = document.getElementById('prov-compras-body');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#999">Sin registros</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => {
+    const total = (parseFloat(r.kilos)||0) * (parseFloat(r.pc)||0);
+    const compLink = r.comprobante
+      ? `<a class="comprobante-link" href="${r.comprobante}" target="_blank">📎 Ver</a>`
+      : '<span style="color:#ccc">—</span>';
+    return `<tr>
+      <td>${r.fecha || '—'}</td>
+      <td>${r.semana || '—'}</td>
+      <td><strong>${r.especie || '—'}</strong></td>
+      <td>${fmt(r.kilos)} kg</td>
+      <td>$${fmtM(r.pc)}/kg</td>
+      <td><strong>$${fmtM(total)}</strong></td>
+      <td>${r.pagado ? '<span class="pill pill-green">✓ Pagado</span>' : '<span class="pill pill-red">⏳ Pendiente</span>'}</td>
+      <td>${compLink}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── VISTA ADMIN ───────────────────────────────────────────
+async function cargarAdmin() {
+  const [compras, pagos] = await Promise.all([
+    sbGet('m2_compras', 'select=*&order=fecha.desc'),
+    sbGet('pagos', 'select=*&order=fecha.desc')
+  ]);
+  todasComprasAdmin = compras || [];
+
+  // Stats admin
+  const total_kilos = todasComprasAdmin.reduce((s, r) => s + (parseFloat(r.kilos)||0), 0);
+  const pendientes = todasComprasAdmin.filter(r => !r.pagado);
+  const monto_pend = pendientes.reduce((s,r) => s + ((parseFloat(r.kilos)||0)*(parseFloat(r.pc)||0)), 0);
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Registros</div><div class="stat-value">${todasComprasAdmin.length}</div></div>
+    <div class="stat-card naranja"><div class="stat-label">Kilos Totales</div><div class="stat-value">${fmt(total_kilos)} kg</div></div>
+    <div class="stat-card rojo"><div class="stat-label">Por Pagar</div><div class="stat-value">$${fmtM(monto_pend)}</div></div>
+  `;
+
+  // Filtros
+  const provs = [...new Set(todasComprasAdmin.map(r => r.prod).filter(Boolean))].sort();
+  const selP = document.getElementById('admin-filtro-prov');
+  provs.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; selP.appendChild(o); });
+  const especies = [...new Set(todasComprasAdmin.map(r => r.especie).filter(Boolean))].sort();
+  const selE = document.getElementById('admin-filtro-especie');
+  especies.forEach(e => { const o = document.createElement('option'); o.value = e; o.textContent = e; selE.appendChild(o); });
+
+  renderAdminCompras(todasComprasAdmin);
+
+  // Pagos
+  const tPagos = document.getElementById('admin-pagos-body');
+  if (!pagos || !pagos.length) {
+    tPagos.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:#999">Sin pagos registrados</td></tr>';
+  } else {
+    tPagos.innerHTML = (pagos||[]).map(p => `<tr>
+      <td>${p.fecha}</td>
+      <td>${p.prod}</td>
+      <td><strong>$${fmtM(p.monto)}</strong></td>
+      <td>${p.obs || '—'}</td>
+    </tr>`).join('');
+  }
+}
+
+function filtrarAdmin() {
+  const prov = document.getElementById('admin-filtro-prov').value;
+  const pag = document.getElementById('admin-filtro-pagado').value;
+  const esp = document.getElementById('admin-filtro-especie').value;
+  let d = todasComprasAdmin;
+  if (prov) d = d.filter(r => r.prod === prov);
+  if (pag !== '') d = d.filter(r => String(r.pagado) === pag);
+  if (esp) d = d.filter(r => r.especie === esp);
+  renderAdminCompras(d);
+}
+
+function renderAdminCompras(data) {
+  document.getElementById('admin-total-badge').textContent = `${data.length} registros`;
+  const tbody = document.getElementById('admin-compras-body');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#999">Sin registros</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => {
+    const total = (parseFloat(r.kilos)||0)*(parseFloat(r.pc)||0);
+    const acciones = r.pagado
+      ? `<span class="pill pill-green" style="font-size:0.75rem">✓ Pagado ${r.fecha_pago||''}</span>`
+      : `<button class="btn btn-warning btn-sm" onclick="abrirModalPago('${r.id}','${escHtml(r.prod)}')">💰 Pagar</button>`;
+    return `<tr>
+      <td><strong>${r.prod}</strong></td>
+      <td>${r.fecha||'—'}</td>
+      <td>${r.semana||'—'}</td>
+      <td>${r.especie||'—'}</td>
+      <td>${fmt(r.kilos)} kg</td>
+      <td>$${fmtM(r.pc)}/kg</td>
+      <td><strong>$${fmtM(total)}</strong></td>
+      <td>${r.pagado ? '<span class="pill pill-green">✓ Pagado</span>' : '<span class="pill pill-red">⏳ Pendiente</span>'}</td>
+      <td>${acciones}</td>
+    </tr>`;
+  }).join('');
+}
+
+function adminTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('admin-tab-compras').style.display = tab === 'compras' ? 'block' : 'none';
+  document.getElementById('admin-tab-pagos').style.display = tab === 'pagos' ? 'block' : 'none';
+}
+
+// ── MODAL PAGO ────────────────────────────────────────────
+function abrirModalPago(id, prod) {
+  document.getElementById('modal-compra-id').value = id;
+  document.getElementById('modal-compra-prod').value = prod;
+  document.getElementById('modal-prov-display').value = prod;
+  document.getElementById('modal-archivo').value = '';
+  document.getElementById('modal-ref').value = '';
+  document.getElementById('modal-pago').classList.add('active');
+}
+function cerrarModal() {
+  document.getElementById('modal-pago').classList.remove('active');
+}
+
+async function registrarPago() {
+  const id = document.getElementById('modal-compra-id').value;
+  const prod = document.getElementById('modal-compra-prod').value;
+  const archivo = document.getElementById('modal-archivo').files[0];
+  const ref = document.getElementById('modal-ref').value;
+  const hoy = new Date().toISOString().split('T')[0];
+
+  let comprobanteUrl = null;
+
+  if (archivo) {
+    const ext = archivo.name.split('.').pop();
+    const path = `comprobantes/${id}_${Date.now()}.${ext}`;
+    const upRes = await sbUpload('comprobantes', path, archivo);
+    if (upRes && !upRes.error) {
+      comprobanteUrl = `${SUPA_URL}/storage/v1/object/public/comprobantes/${path}`;
+    } else {
+      // Si no existe el bucket, guardamos solo la referencia
+      comprobanteUrl = ref || 'comprobante-subido';
+    }
+  }
+
+  const updateData = {
+    pagado: true,
+    fecha_pago: hoy
+  };
+  if (comprobanteUrl) updateData.comprobante = comprobanteUrl;
+
+  await sbPatch('m2_compras', id, updateData);
+
+  // WhatsApp
+  const waMsg = encodeURIComponent(`Hola ${prod}, 🍊 *FamilyFruit* ha registrado tu pago del ${hoy}. Ingresa al portal para ver el comprobante.`);
+  const waUrl = `https://wa.me/?text=${waMsg}`;
+
+  cerrarModal();
+  alert(`✅ Pago registrado correctamente.\n\nAhora se abrirá WhatsApp para notificar al proveedor.`);
+  window.open(waUrl, '_blank');
+
+  // Recargar datos
+  todasComprasAdmin = [];
+  document.getElementById('admin-compras-body').innerHTML = '<tr><td colspan="9" class="loading">Actualizando...</td></tr>';
+  await cargarAdmin();
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function fmt(n) { return n ? Number(n).toLocaleString('es-CL') : '0'; }
+function fmtM(n) { return n ? Number(n).toLocaleString('es-CL', {minimumFractionDigits:0, maximumFractionDigits:0}) : '0'; }
+function escHtml(s) { return (s||'').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+</script>
+</body>
+</html>
