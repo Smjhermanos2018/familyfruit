@@ -238,6 +238,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
     </div>
     <button class="qe-btn" onclick="addF1()">+ Registrar venta F1</button>
   </div>
+  <!-- SELECTOR MULTI-GUÍA -->
+  <div class="card" style="border-left:4px solid var(--g1)">
+    <div class="clbl">📄 Proforma agrupada — selecciona guías a cobrar</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.5">Elige una o varias guías (misma especie u otras) y genera una sola proforma con todo agrupado.</p>
+    <div id="f1-selector" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+      <div class="empty" style="padding:8px">Sin registros F1</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="bsm bsm-g" onclick="f1SelAll()">☑ Todas</button>
+      <button class="bsm" style="background:var(--surf2)" onclick="f1SelNone()">☐ Ninguna</button>
+      <button class="btn btn-g" style="flex:1;min-width:160px" onclick="pfF1Seleccion()">📄 Generar proforma seleccionadas</button>
+    </div>
+  </div>
   <div class="card">
     <div class="clbl">Ventas F1 registradas</div>
     <div id="f1-lista"></div>
@@ -746,7 +759,144 @@ function calcF2(){
     '<div>Total factura: <b>'+fm(total)+'</b></div>';
 }
 
-/* ══ F1 CRUD ══ */
+/* ══ F1 SELECTOR MULTI-GUÍA ══ */
+function renderF1Selector(){
+  var el=ge('f1-selector');if(!el) return;
+  if(!f1.length){el.innerHTML='<div class="empty" style="padding:8px">Sin registros F1</div>';return;}
+  // Obtener guías únicas con resumen
+  var guias={};
+  f1.forEach(function(x){
+    if(!guias[x.guia]){guias[x.guia]={guia:x.guia,fecha:x.fecha,frutas:[],kg:0,neto:0};}
+    guias[x.guia].frutas.push((x.fruta||'')+(x.calibre?' '+x.calibre:''));
+    guias[x.guia].kg+=x.kilos;
+    guias[x.guia].neto+=x.neto;
+  });
+  el.innerHTML=Object.values(guias).map(function(g){
+    var label='Guía '+g.guia+' · '+g.fecha+' · '+[...new Set(g.frutas)].join(', ')+' · '+Math.round(g.kg).toLocaleString('es-CL')+' kg · $'+Math.round(g.neto).toLocaleString('es-CL');
+    return '<label style="display:flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;width:100%">'+
+      '<input type="checkbox" class="f1-chk" value="'+g.guia+'" style="width:16px;height:16px;cursor:pointer"/>'+
+      '<span>'+label+'</span>'+
+    '</label>';
+  }).join('');
+}
+function f1SelAll(){document.querySelectorAll('.f1-chk').forEach(function(c){c.checked=true;});}
+function f1SelNone(){document.querySelectorAll('.f1-chk').forEach(function(c){c.checked=false;});}
+
+function pfF1Seleccion(){
+  var selGuias=[];
+  document.querySelectorAll('.f1-chk:checked').forEach(function(c){selGuias.push(c.value);});
+  if(!selGuias.length){alert('Selecciona al menos una guía');return;}
+
+  // Tomar todos los registros F1 de las guías seleccionadas
+  var regs=f1.filter(function(x){return selGuias.indexOf(x.guia)!==-1;});
+  var iva=regs[0].iva||19;
+
+  function clasificar(cal){
+    var c=(cal||'').toLowerCase();
+    if(c==='grande'||c==='mediano'||c==='') return 'Comercial';
+    if(c==='chico') return 'Chico';
+    if(c==='pre') return 'Pre';
+    if(c==='sin cera') return 'Sin cera';
+    return 'Comercial';
+  }
+
+  // Agrupar por especie → clasificación
+  var byEspCal={};
+  regs.forEach(function(r){
+    var esp=r.fruta||'Sin especie';
+    var clas=clasificar(r.calibre);
+    if(!byEspCal[esp]) byEspCal[esp]={};
+    if(!byEspCal[esp][clas]) byEspCal[esp][clas]={kg:0,sumPV:0,comF:0,comP:0,neto:0,cfija:r.cfija,cpct:r.cpct};
+    var d=byEspCal[esp][clas];
+    d.kg+=r.kilos; d.sumPV+=r.pventa*r.kilos;
+    d.comF+=r.comF; d.comP+=r.comP; d.neto+=r.neto;
+  });
+
+  var ORDEN=['Comercial','Chico','Pre','Sin cera'];
+  var totalKg=0,totalNeto=0,totalComF=0,totalComP=0;
+  var filas='';
+
+  Object.keys(byEspCal).forEach(function(esp){
+    var clasMap=byEspCal[esp];
+    var espKg=0,espNeto=0;
+    filas+='<tr style="background:#f0f7ec"><td colspan="5" style="padding:6px 8px;font-weight:700;font-size:12px;color:#1a3d1a">🌿 '+esp+'</td></tr>';
+    ORDEN.forEach(function(clas){
+      if(!clasMap[clas]) return;
+      var d=clasMap[clas];
+      var ppVenta=d.kg>0?Math.round(d.sumPV/d.kg):0;
+      var comF=Math.round(d.comF),comP=Math.round(d.comP),neto=Math.round(d.neto);
+      espKg+=d.kg; espNeto+=neto; totalKg+=d.kg; totalNeto+=neto; totalComF+=comF; totalComP+=comP;
+      filas+='<tr style="border-bottom:1px solid #eee">'+
+        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+clas+'</td>'+
+        '<td style="padding:7px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
+        '<td style="padding:7px 6px;text-align:right">$'+ppVenta.toLocaleString('es-CL')+'/kg</td>'+
+        '<td style="padding:7px 6px;font-size:10px;color:#555">'+Math.round(d.kg)+' kg × $'+d.cfija+' = $'+comF.toLocaleString('es-CL')+'<br>$'+Math.round(d.sumPV).toLocaleString('es-CL')+' × '+d.cpct+'% = $'+comP.toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a3d1a">$'+neto.toLocaleString('es-CL')+'</td>'+
+      '</tr>';
+    });
+    var clasCount=ORDEN.filter(function(c){return clasMap[c];}).length;
+    if(clasCount>1){
+      filas+='<tr style="background:#eaf3de;font-style:italic">'+
+        '<td style="padding:7px 8px;font-weight:600">Subtotal '+esp+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:600">'+Math.round(espKg).toLocaleString('es-CL')+' kg</td>'+
+        '<td colspan="2"></td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a3d1a">$'+Math.round(espNeto).toLocaleString('es-CL')+'</td>'+
+      '</tr>';
+    }
+  });
+
+  var totalIva=Math.round(totalNeto*(iva/100));
+  var totalConIva=totalNeto+totalIva;
+  var guiasLabel=selGuias.join(', ');
+
+  var html=logoHdr()+
+    '<div style="margin-bottom:12px">'+
+      '<div style="font-size:20px;font-weight:800;color:#1a3d1a">LIQUIDACIÓN DE VENTAS</div>'+
+      '<div style="font-size:11px;color:#666;margin-top:3px">N° LIQ-'+Date.now().toString().slice(-5)+' · Emisión: '+hoy()+'</div>'+
+    '</div>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:11px 16px;margin-bottom:12px">'+
+      '<div style="font-size:10px;opacity:.7;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Guías liquidadas</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      selGuias.map(function(g){return '<span style="background:rgba(255,255,255,.18);border-radius:5px;padding:3px 9px;font-size:12px;font-weight:700">'+g+'</span>';}).join('')+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:12px;margin-bottom:14px">'+
+      '<span style="color:#888">Proveedor:</span> <strong>'+(regs[0].proveedor||'—')+'</strong>'+
+    '</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">'+
+      '<thead><tr style="background:#1a3d1a;color:#fff">'+
+        '<th style="padding:8px 6px;text-align:left">Clasificación</th>'+
+        '<th style="padding:8px 6px;text-align:right">Kilos</th>'+
+        '<th style="padding:8px 6px;text-align:right">P° venta/kg</th>'+
+        '<th style="padding:8px 6px;text-align:left">Desglose comisión</th>'+
+        '<th style="padding:8px 6px;text-align:right">Comisión neta</th>'+
+      '</tr></thead>'+
+      '<tbody>'+filas+'</tbody>'+
+      '<tfoot><tr style="background:#d0e8d0;font-weight:700">'+
+        '<td style="padding:9px 8px">TOTALES</td>'+
+        '<td style="padding:9px 6px;text-align:right">'+Math.round(totalKg).toLocaleString('es-CL')+' kg</td>'+
+        '<td></td>'+
+        '<td style="padding:9px 6px;font-size:11px;color:#555">Fija: $'+totalComF.toLocaleString('es-CL')+' · %: $'+totalComP.toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:9px 6px;text-align:right;color:#1a3d1a;font-size:14px">$'+totalNeto.toLocaleString('es-CL')+'</td>'+
+      '</tr></tfoot>'+
+    '</table>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. fija total</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">$'+totalComF.toLocaleString('es-CL')+'</div></div>'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. % total</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">$'+totalComP.toLocaleString('es-CL')+'</div></div>'+
+      '<div style="border:1px solid #b8d98b;border-radius:8px;padding:10px;text-align:center;background:#eaf3de"><div style="font-size:10px;color:#2d6a11;margin-bottom:3px">IVA '+iva+'%</div><div style="font-size:17px;font-weight:800;color:#2d6a11">$'+totalIva.toLocaleString('es-CL')+'</div></div>'+
+    '</div>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<div><div style="font-size:12px;opacity:.85">TOTAL A FACTURAR — SERVICIOS DE COMERCIALIZACIÓN</div>'+
+      '<div style="font-size:10px;opacity:.6">Honorarios netos $'+totalNeto.toLocaleString('es-CL')+' + IVA $'+totalIva.toLocaleString('es-CL')+'</div></div>'+
+      '<div style="font-size:28px;font-weight:900">$'+totalConIva.toLocaleString('es-CL')+'</div>'+
+    '</div>'+
+    bancoHtml()+
+    '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:8px">Proforma sin validez tributaria. Generado '+hoy()+'</div>';
+
+  pfBase('Liquidación F1 — Guías '+guiasLabel, html);
+}
+
+
 function addF1(){
   var guia=v('f1-g').trim();if(!guia){setMsg('msg-f1','Ingresa N° de guía','err');return;}
   var kg=pf('f1-k'),pv=pf('f1-pv');if(!kg||!pv){setMsg('msg-f1','Completa kilos y precio','err');return;}
@@ -780,6 +930,7 @@ function saveF1(){
 closeEdit('edit-f1');renderF1Lista();renderDash();
 }
 function renderF1Lista(){
+  renderF1Selector();
   var el=ge('f1-lista');
   if(!f1.length){el.innerHTML='<div class="empty">Sin ventas F1 registradas</div>';return;}
   el.innerHTML=f1.map(function(x){
@@ -1206,50 +1357,129 @@ function pfBase(tit,html){
 
 function pfF1Individual(id){
   var x=f1.find(function(r){return r.id===id;});if(!x){return;}
+  // Agrupar todos los registros F1 de la misma guía
+  var regs=f1.filter(function(r){return r.guia===x.guia;});
+  var iva=x.iva||19;
+
+  // Clasificar calibre igual que nota de compra F2
+  function clasificar(cal){
+    var c=(cal||'').toLowerCase();
+    if(c==='grande'||c==='mediano'||c==='') return 'Comercial';
+    if(c==='chico') return 'Chico';
+    if(c==='pre') return 'Pre';
+    if(c==='sin cera') return 'Sin cera';
+    return 'Comercial';
+  }
+
+  // Agrupar por especie → clasificación
+  var byEspCal={};
+  regs.forEach(function(r){
+    var esp=r.fruta||'Sin especie';
+    var clas=clasificar(r.calibre);
+    if(!byEspCal[esp]) byEspCal[esp]={};
+    if(!byEspCal[esp][clas]) byEspCal[esp][clas]={kg:0,sumPV:0,comF:0,comP:0,neto:0,cfija:r.cfija,cpct:r.cpct};
+    var d=byEspCal[esp][clas];
+    d.kg+=r.kilos;
+    d.sumPV+=r.pventa*r.kilos;
+    d.comF+=r.comF;
+    d.comP+=r.comP;
+    d.neto+=r.neto;
+  });
+
+  var ORDEN=['Comercial','Chico','Pre','Sin cera'];
+  var totalKg=0,totalNeto=0,totalComF=0,totalComP=0;
+  var filas='';
+
+  Object.keys(byEspCal).forEach(function(esp){
+    var clasMap=byEspCal[esp];
+    var espKg=0,espNeto=0;
+    filas+='<tr style="background:#f0f7ec"><td colspan="6" style="padding:6px 8px;font-weight:700;font-size:12px;color:#1a3d1a">🌿 '+esp+'</td></tr>';
+
+    ORDEN.forEach(function(clas){
+      if(!clasMap[clas]) return;
+      var d=clasMap[clas];
+      var ppVenta=d.kg>0?Math.round(d.sumPV/d.kg):0;
+      var ventaNeta=Math.round(d.sumPV);
+      var comF=Math.round(d.comF);
+      var comP=Math.round(d.comP);
+      var neto=Math.round(d.neto);
+      espKg+=d.kg; espNeto+=neto;
+      totalKg+=d.kg; totalNeto+=neto; totalComF+=comF; totalComP+=comP;
+      filas+='<tr style="border-bottom:1px solid #eee">'+
+        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+clas+'</td>'+
+        '<td style="padding:7px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
+        '<td style="padding:7px 6px;text-align:right">$'+ppVenta.toLocaleString('es-CL')+'/kg</td>'+
+        '<td style="padding:7px 6px;font-size:10px;color:#555">'+
+          Math.round(d.kg)+' kg × $'+d.cfija+' = $'+comF.toLocaleString('es-CL')+'<br>'+
+          '$'+ventaNeta.toLocaleString('es-CL')+' × '+d.cpct+'% = $'+comP.toLocaleString('es-CL')+
+        '</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a3d1a">$'+neto.toLocaleString('es-CL')+'</td>'+
+      '</tr>';
+    });
+
+    // Subtotal especie si hay más de una clasificación
+    var clasCount=ORDEN.filter(function(c){return clasMap[c];}).length;
+    if(clasCount>1){
+      filas+='<tr style="background:#eaf3de;font-style:italic">'+
+        '<td style="padding:7px 8px;font-weight:600">Subtotal '+esp+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:600">'+Math.round(espKg).toLocaleString('es-CL')+' kg</td>'+
+        '<td colspan="2"></td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a3d1a">$'+Math.round(espNeto).toLocaleString('es-CL')+'</td>'+
+      '</tr>';
+    }
+  });
+
+  var totalIva=Math.round(totalNeto*(iva/100));
+  var totalConIva=totalNeto+totalIva;
+
   var html=logoHdr()+
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
       '<div><div style="font-size:20px;font-weight:800;color:#1a3d1a">LIQUIDACIÓN DE VENTAS</div>'+
       '<div style="font-size:11px;color:#666;margin-top:3px">N° LIQ-'+String(x.id).slice(-6)+' · Emisión: '+hoy()+'</div></div>'+
-      '<div style="text-align:right;font-size:12px;color:#555">'+
-        '<div>Guía: <strong>'+x.guia+'</strong></div>'+
-        '<div>Fecha: <strong>'+ffd(x.fecha)+'</strong></div>'+
-      '</div>'+
     '</div>'+
-    '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">'+'<div style="font-size:11px;opacity:.7">GUÍA LIQUIDADA</div>'+'<div style="font-size:22px;font-weight:900;letter-spacing:1px">'+x.guia+'</div>'+'<div style="font-size:11px;opacity:.7">'+ffd(x.fecha)+'</div>'+'</div>'+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:14px">'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">'+
+      '<div style="font-size:11px;opacity:.7">GUÍA LIQUIDADA</div>'+
+      '<div style="font-size:22px;font-weight:900;letter-spacing:1px">'+x.guia+'</div>'+
+      '<div style="font-size:11px;opacity:.8">'+ffd(x.fecha)+'</div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:14px">'+
       '<div><span style="color:#888">Cliente:</span> <strong>'+x.cliente+'</strong></div>'+
       '<div><span style="color:#888">Proveedor:</span> <strong>'+x.proveedor+'</strong></div>'+
     '</div>'+
-    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">'+
       '<thead><tr style="background:#1a3d1a;color:#fff">'+
-        '<th style="padding:9px 6px;text-align:left">Fruta</th><th style="padding:9px 6px;text-align:right">Kilos</th>'+
-        '<th style="padding:9px 6px;text-align:right">Precio/kg</th><th style="padding:9px 6px;text-align:left">Desglose comisión</th><th style="padding:9px 6px;text-align:right">Total comisión</th>'+
-      '</tr></thead><tbody>'+
-        '<tr style="border-bottom:1px solid #e8f5e8">'+
-          '<td style="padding:8px 6px">'+x.fruta+'</td>'+
-          '<td style="padding:8px 6px;text-align:right">'+f(x.kilos)+' kg</td>'+
-          '<td style="padding:8px 6px;text-align:right">'+fm(x.pventa)+'</td>'+
-          '<td style="padding:8px 6px;font-size:11px;color:#555">'+f(x.kilos)+' kg × $'+x.cfija+' = '+fm(x.comF)+'<br>Venta neta '+fm(x.bruta)+' × '+x.cpct+'% = '+fm(Math.round(x.comP))+'</td>'+
-          '<td style="padding:8px 6px;text-align:right;font-weight:800;color:#1a3d1a;font-size:15px">'+fm(x.neto)+'</td>'+
-        '</tr>'+
-      '</tbody></table>'+
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">'+
-      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. fija $'+x.cfija+'/kg</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">'+fm(x.comF)+'</div></div>'+
-      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. '+x.cpct+'% venta neta</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">'+fm(Math.round(x.comP))+'</div></div>'+
-      '<div style="border:1px solid #b8d98b;border-radius:8px;padding:10px;text-align:center;background:#eaf3de"><div style="font-size:10px;color:#2d6a11;margin-bottom:3px">IVA '+x.iva+'%</div><div style="font-size:17px;font-weight:800;color:#2d6a11">'+fm(Math.round(x.ivaAmt))+'</div></div>'+
+        '<th style="padding:8px 6px;text-align:left">Clasificación</th>'+
+        '<th style="padding:8px 6px;text-align:right">Kilos</th>'+
+        '<th style="padding:8px 6px;text-align:right">P° venta/kg</th>'+
+        '<th style="padding:8px 6px;text-align:left">Desglose comisión</th>'+
+        '<th style="padding:8px 6px;text-align:right">Comisión neta</th>'+
+      '</tr></thead>'+
+      '<tbody>'+filas+'</tbody>'+
+      '<tfoot><tr style="background:#d0e8d0;font-weight:700">'+
+        '<td style="padding:9px 8px">TOTALES</td>'+
+        '<td style="padding:9px 6px;text-align:right">'+Math.round(totalKg).toLocaleString('es-CL')+' kg</td>'+
+        '<td></td>'+
+        '<td style="padding:9px 6px;font-size:11px;color:#555">Fija: $'+totalComF.toLocaleString('es-CL')+' · %: $'+totalComP.toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:9px 6px;text-align:right;color:#1a3d1a;font-size:14px">$'+totalNeto.toLocaleString('es-CL')+'</td>'+
+      '</tr></tfoot>'+
+    '</table>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. fija total</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">$'+totalComF.toLocaleString('es-CL')+'</div></div>'+
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:3px">Com. % total</div><div style="font-size:17px;font-weight:800;color:#1a3d1a">$'+totalComP.toLocaleString('es-CL')+'</div></div>'+
+      '<div style="border:1px solid #b8d98b;border-radius:8px;padding:10px;text-align:center;background:#eaf3de"><div style="font-size:10px;color:#2d6a11;margin-bottom:3px">IVA '+iva+'%</div><div style="font-size:17px;font-weight:800;color:#2d6a11">$'+totalIva.toLocaleString('es-CL')+'</div></div>'+
     '</div>'+
     '<div style="background:#1a3d1a;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
-      '<div><div style="font-size:12px;opacity:.85">TOTAL A FACTURAR — SERVICIOS DE COMERCIALIZACIÓN</div><div style="font-size:10px;opacity:.6">Honorarios netos '+fm(x.neto)+' + IVA '+fm(Math.round(x.ivaAmt))+'</div></div>'+
-      '<div style="font-size:28px;font-weight:900">'+fm(Math.round(x.total))+'</div>'+
+      '<div><div style="font-size:12px;opacity:.85">TOTAL A FACTURAR — SERVICIOS DE COMERCIALIZACIÓN</div>'+
+      '<div style="font-size:10px;opacity:.6">Honorarios netos $'+totalNeto.toLocaleString('es-CL')+' + IVA $'+totalIva.toLocaleString('es-CL')+'</div></div>'+
+      '<div style="font-size:28px;font-weight:900">$'+totalConIva.toLocaleString('es-CL')+'</div>'+
     '</div>'+
-
-    // Bloque adjunto en proforma individual
-    +(x.adj?'<div style="margin-top:18px;padding-top:14px;border-top:2px solid #eee">'+
-      '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:9px;text-transform:uppercase;letter-spacing:.4px">Evidencia fotográfica</div>'+
+    (x.adj?'<div style="margin-top:14px;padding-top:12px;border-top:2px solid #eee">'+
+      '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:8px;text-transform:uppercase">Evidencia fotográfica</div>'+
       (x.adj.foto?'<img src="'+x.adj.foto+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:8px"/>':'')+
       (x.adj.obs?'<div style="background:#fef9e7;border:1px solid #e8d090;border-radius:7px;padding:10px 13px;font-size:12px;color:#7a6000">📝 '+x.adj.obs+'</div>':'')+
     '</div>':'')+
     bancoHtml()+
-    '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:10px">Venta bruta referencial: '+fm(x.bruta)+' · Proforma sin validez tributaria. Generado '+hoy()+'</div>';
+    '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:10px">Proforma sin validez tributaria. Generado '+hoy()+'</div>';
   pfBase('Liquidación F1 — Guía '+x.guia,html);
 }
 
