@@ -475,6 +475,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
 </div>
 
 
+<!-- MODAL NOTA DE VENTA F2 -->
+<div class="edit-modal" id="modal-nv">
+  <div class="edit-box" style="max-width:600px">
+    <div class="edit-title">🧾 Nota de Venta — Guía <span id="nv-guia-label"></span></div>
+    <!-- Campos editables -->
+    <div class="fr2" style="margin-bottom:10px">
+      <div class="fld"><label>Fecha emisión</label><input id="nv-fecha" type="date"/></div>
+      <div class="fld"><label>N° Nota</label><input id="nv-num" type="text" placeholder="NV-0001"/></div>
+    </div>
+    <div class="fld" style="margin-bottom:10px">
+      <label>Observación (opcional)</label>
+      <textarea id="nv-obs" style="width:100%;height:60px;padding:9px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:inherit;font-size:13px;resize:none" placeholder="Ej: precio rebajado por daño en fruta, helada, etc."></textarea>
+    </div>
+    <!-- Fotos justificación -->
+    <div class="fld" style="margin-bottom:10px">
+      <label>Fotos justificación precio (opcional)</label>
+      <button class="bsm bsm-b" style="width:100%;justify-content:center;padding:10px;margin-top:5px" onclick="document.getElementById('nv-file').click()">
+        📷 Agregar foto
+      </button>
+      <input type="file" id="nv-file" accept="image/*" capture="environment" multiple style="display:none" onchange="nvAgregarFotos(this)"/>
+      <div id="nv-fotos" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+    </div>
+    <!-- Preview de la nota -->
+    <div style="background:var(--surf2);border-radius:var(--rs);padding:12px;margin-bottom:12px;max-height:300px;overflow-y:auto">
+      <div id="nv-preview"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-o" style="flex:1" onclick="closeEdit('modal-nv')">Cancelar</button>
+      <button class="btn" style="flex:1;background:#1a5fa5;color:#fff" onclick="nvImprimir()">🖨 Imprimir / PDF</button>
+      <button class="btn btn-g" style="flex:1" onclick="nvGuardar()">💾 Guardar nota</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL ADJUNTOS -->
 <div class="edit-modal" id="modal-adj">
   <div class="edit-box" style="max-width:480px">
@@ -820,6 +854,7 @@ function renderF2Lista(){
         '<button class="bsm bsm-b" onclick="openEditF2('+x.id+')">✏️ Editar</button>'+
         '<button class="bsm bsm-g" onclick="pfF2Individual('+x.id+',\'yo\')">📄 Mi proforma</button>'+
         '<button class="bsm bsm-gld" onclick="pfF2Individual('+x.id+',\'prov\')">🧾 Proveedor</button>'+
+        '<button class="bsm" style="background:#e8f1fb;color:#1a5fa5;border:1px solid #b0cef0" onclick="abrirNotaVenta(\'' +x.guia+ '\')" >🧾 Nota venta</button>'+
         '<button class="bsm" style="background:var(--goldl);color:var(--gold)" onclick="adjAbrir('+x.id+',\'f2\')">📎 '+(x.adj?'Ver adjunto':'Adjuntar')+'</button>'+
         '<button class="bsm bsm-r" onclick="delF2('+x.id+')">🗑 Eliminar</button>'+
       '</div>'+
@@ -1496,6 +1531,246 @@ function exportar(tipo){
   var nom=tipo==='f1'?'FF_F1':tipo==='f2'?'FF_F2':'FF_Completo';
   XLSX.writeFile(wb,nom+'_'+hoy2+'.xlsx');
   setMsg('msg-xls','✅ Excel descargado correctamente','ok');
+}
+
+/* ══ NOTA DE VENTA F2 ══ */
+var nvFotosArr=[];
+
+function abrirNotaVenta(guia){
+  // Buscar todos los registros F2 con esa guía
+  var regs=f2.filter(function(x){return x.guia===guia;});
+  if(!regs.length){alert('Sin registros F2 para guía '+guia);return;}
+  ge('nv-guia-label').textContent=guia;
+  ge('nv-fecha').value=today();
+  // Número correlativo
+  var nvGuardadas=regs[0].notaVenta;
+  ge('nv-num').value=nvGuardadas?nvGuardadas.num:('NV-'+String(Date.now()).slice(-4));
+  ge('nv-obs').value=nvGuardadas?nvGuardadas.obs:'';
+  nvFotosArr=nvGuardadas&&nvGuardadas.fotos?nvGuardadas.fotos:[];
+  nvRenderFotos();
+  nvActualizarPreview(guia);
+  ge('modal-nv').classList.add('on');
+}
+
+function nvAgregarFotos(input){
+  Array.from(input.files).forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=new Image();
+      img.onload=function(){
+        var MAX=1000,w=img.width,h=img.height;
+        if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+        var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        nvFotosArr.push(canvas.toDataURL('image/jpeg',0.8));
+        nvRenderFotos();
+        nvActualizarPreview(ge('nv-guia-label').textContent);
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function nvRenderFotos(){
+  var el=ge('nv-fotos');
+  if(!nvFotosArr.length){el.innerHTML='';return;}
+  el.innerHTML=nvFotosArr.map(function(src,i){
+    return '<div style="position:relative;display:inline-block">'+
+      '<img src="'+src+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)"/>'+
+      '<button onclick="nvEliminarFoto('+i+')" style="position:absolute;top:-6px;right:-6px;background:#922;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:1">×</button>'+
+    '</div>';
+  }).join('');
+}
+
+function nvEliminarFoto(i){
+  nvFotosArr.splice(i,1);
+  nvRenderFotos();
+  nvActualizarPreview(ge('nv-guia-label').textContent);
+}
+
+function nvActualizarPreview(guia){
+  ge('nv-preview').innerHTML=nvGenerarHTML(guia,true);
+}
+
+function nvGenerarHTML(guia,preview){
+  var regs=f2.filter(function(x){return x.guia===guia;});
+  if(!regs.length) return '';
+  var fecha=ge('nv-fecha').value,num=ge('nv-num').value,obs=ge('nv-obs').value;
+  var iva=regs[0].iva||19;
+
+  // ── Clasificar calibres ──
+  // Grande + Mediano → Comercial | Chico → Chico | Pre → Pre | Sin cera → Sin cera | resto → Comercial
+  function clasificar(cal){
+    var c=(cal||'').toLowerCase();
+    if(c==='grande'||c==='mediano'||c==='') return 'Comercial';
+    if(c==='chico') return 'Chico';
+    if(c==='pre') return 'Pre';
+    if(c==='sin cera') return 'Sin cera';
+    return 'Comercial';
+  }
+
+  // Agrupar por especie → clasificación
+  // Estructura: {especie: {clasificacion: {kg, sumPK}}}
+  var byEspCal={};
+  regs.forEach(function(x){
+    var esp=x.fruta||'Sin especie';
+    var clas=clasificar(x.calibre);
+    if(!byEspCal[esp]) byEspCal[esp]={};
+    if(!byEspCal[esp][clas]) byEspCal[esp][clas]={kg:0,sumPK:0};
+    byEspCal[esp][clas].kg+=x.kilos;
+    byEspCal[esp][clas].sumPK+=x.pcompra*x.kilos;
+  });
+
+  var totalKg=0,totalNeto=0;
+  var filas='';
+  var ORDEN=['Comercial','Chico','Pre','Sin cera'];
+
+  Object.keys(byEspCal).forEach(function(esp){
+    var clasMap=byEspCal[esp];
+    var espKg=0,espNeto=0;
+    // Fila separadora de especie si hay más de una
+    var espLabel='<tr style="background:#f0f7ec"><td colspan="6" style="padding:6px 8px;font-weight:700;font-size:12px;color:#1a3d1a">🌿 '+esp+'</td></tr>';
+    filas+=espLabel;
+
+    ORDEN.forEach(function(clas){
+      if(!clasMap[clas]) return;
+      var d=clasMap[clas];
+      var ppNeto=d.kg>0?Math.round(d.sumPK/d.kg):0;
+      var ppIva=Math.round(ppNeto*(1+iva/100));
+      var subNeto=Math.round(d.kg*ppNeto);
+      var subIva=Math.round(subNeto*(iva/100));
+      var subTotal=subNeto+subIva;
+      espKg+=d.kg; espNeto+=subNeto;
+      totalKg+=d.kg; totalNeto+=subNeto;
+      filas+='<tr style="border-bottom:1px solid #eee">'+
+        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+clas+'</td>'+
+        '<td style="padding:7px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
+        '<td style="padding:7px 6px;text-align:right">$'+ppNeto.toLocaleString('es-CL')+'/kg</td>'+
+        '<td style="padding:7px 6px;text-align:right;color:#1a5fa5;font-weight:600">$'+ppIva.toLocaleString('es-CL')+'/kg</td>'+
+        '<td style="padding:7px 6px;text-align:right">$'+subNeto.toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a5fa5">$'+subTotal.toLocaleString('es-CL')+'</td>'+
+      '</tr>';
+    });
+
+    // Subtotal por especie (si hay más de una clasificación)
+    var clasCount=ORDEN.filter(function(c){return clasMap[c];}).length;
+    if(clasCount>1){
+      var espIva=Math.round(espNeto*(iva/100));
+      var ppPond=espKg>0?Math.round(espNeto/espKg):0;
+      var ppPondIva=Math.round(ppPond*(1+iva/100));
+      filas+='<tr style="background:#e8f1fb;font-style:italic">'+
+        '<td style="padding:7px 8px;font-weight:600">Subtotal '+esp+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:600">'+Math.round(espKg).toLocaleString('es-CL')+' kg</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-size:10px;color:#555">P.pond: $'+ppPond.toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-size:10px;color:#1a5fa5">$'+ppPondIva.toLocaleString('es-CL')+'/kg</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:600">$'+espNeto.toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a5fa5">$'+(espNeto+espIva).toLocaleString('es-CL')+'</td>'+
+      '</tr>';
+    }
+  });
+
+  var totalIva=Math.round(totalNeto*(iva/100));
+  var totalConIva=totalNeto+totalIva;
+  // Precio promedio ponderado total con IVA
+  var ppTotalNeto=totalKg>0?Math.round(totalNeto/totalKg):0;
+  var ppTotalIva=Math.round(ppTotalNeto*(1+iva/100));
+
+  var fotosHtml=nvFotosArr.length?
+    '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee">'+
+    '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:8px;text-transform:uppercase">Evidencia fotográfica</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:8px">'+
+    nvFotosArr.map(function(src){return '<img src="'+src+'" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:6px;border:1px solid #ddd"/>';}).join('')+
+    '</div></div>':'';
+
+  return (preview?'':'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;padding:2rem;font-size:13px}@media print{.no-print{display:none}}</style></head><body>')+
+    '<div style="font-family:-apple-system,Arial,sans-serif;font-size:13px;color:#111">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:3px solid #1a3d1a;margin-bottom:16px">'+
+      '<img src="'+LOGO+'" style="height:52px;object-fit:contain" alt="FamilyFruit"/>'+
+      '<div style="text-align:right;font-size:11px;color:#555">'+
+        (cfg.tel?'<div>📞 '+cfg.tel+'</div>':'')+
+        (cfg.em?'<div>✉ '+cfg.em+'</div>':'')+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
+      '<div><div style="font-size:20px;font-weight:800;color:#1a5fa5">NOTA DE VENTA</div>'+
+      '<div style="font-size:11px;color:#666;margin-top:3px">'+num+' · Emisión: '+ffd(fecha)+'</div></div>'+
+    '</div>'+
+    '<div style="background:#1a5fa5;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">'+
+      '<div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Guía liquidada</div>'+
+      '<div style="font-size:22px;font-weight:900;letter-spacing:1px">'+guia+'</div>'+
+      '<div style="font-size:11px;opacity:.8">'+regs[0].proveedor+'</div>'+
+    '</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">'+
+      '<thead><tr style="background:#1a5fa5;color:#fff">'+
+        '<th style="padding:8px 6px;text-align:left">Clasificación</th>'+
+        '<th style="padding:8px 6px;text-align:right">Kilos</th>'+
+        '<th style="padding:8px 6px;text-align:right">P° neto/kg</th>'+
+        '<th style="padding:8px 6px;text-align:right">P° c/IVA/kg</th>'+
+        '<th style="padding:8px 6px;text-align:right">Subtotal neto</th>'+
+        '<th style="padding:8px 6px;text-align:right">Subtotal c/IVA</th>'+
+      '</tr></thead>'+
+      '<tbody>'+filas+'</tbody>'+
+      '<tfoot>'+
+        '<tr style="background:#dce8f7;font-weight:700">'+
+          '<td style="padding:9px 8px">P° promedio ponderado</td>'+
+          '<td style="padding:9px 6px;text-align:right">'+Math.round(totalKg).toLocaleString('es-CL')+' kg</td>'+
+          '<td style="padding:9px 6px;text-align:right">$'+ppTotalNeto.toLocaleString('es-CL')+'/kg</td>'+
+          '<td style="padding:9px 6px;text-align:right;color:#1a5fa5">$'+ppTotalIva.toLocaleString('es-CL')+'/kg</td>'+
+          '<td style="padding:9px 6px;text-align:right">$'+totalNeto.toLocaleString('es-CL')+'</td>'+
+          '<td style="padding:9px 6px;text-align:right;color:#1a5fa5;font-size:14px">$'+totalConIva.toLocaleString('es-CL')+'</td>'+
+        '</tr>'+
+      '</tfoot>'+
+    '</table>'+
+    '<div style="background:#1a5fa5;color:#fff;border-radius:10px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
+      '<div>'+
+        '<div style="font-size:12px;opacity:.85">TOTAL A PAGAR AL PROVEEDOR (c/IVA '+iva+'%)</div>'+
+        '<div style="font-size:10px;opacity:.6">Neto $'+totalNeto.toLocaleString('es-CL')+' + IVA $'+totalIva.toLocaleString('es-CL')+'</div>'+
+        '<div style="font-size:11px;opacity:.85;margin-top:3px">P° prom. ponderado c/IVA: $'+ppTotalIva.toLocaleString('es-CL')+'/kg</div>'+
+      '</div>'+
+      '<div style="font-size:26px;font-weight:900">$'+totalConIva.toLocaleString('es-CL')+'</div>'+
+    '</div>'+
+    (cfg.ba||cfg.cu?
+      '<div style="border:2px solid #1a3d1a;border-radius:10px;padding:12px;margin-bottom:14px">'+
+      '<div style="font-size:11px;font-weight:800;color:#1a3d1a;margin-bottom:6px;text-transform:uppercase">Datos de pago</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:12px">'+
+        (cfg.ba?'<div><span style="color:#888">Banco:</span> <strong>'+cfg.ba+'</strong></div>':'')+
+        (cfg.tc?'<div><span style="color:#888">Tipo:</span> <strong>'+cfg.tc+'</strong></div>':'')+
+        (cfg.cu?'<div><span style="color:#888">N° cuenta:</span> <strong>'+cfg.cu+'</strong></div>':'')+
+        (cfg.ti?'<div><span style="color:#888">Titular:</span> <strong>'+cfg.ti+'</strong></div>':'')+
+        (cfg.rb?'<div><span style="color:#888">RUT:</span> <strong>'+cfg.rb+'</strong></div>':'')+
+        (cfg.ep?'<div><span style="color:#888">Email pago:</span> <strong>'+cfg.ep+'</strong></div>':'')+
+      '</div></div>':'')+
+    (obs?'<div style="background:#fef9e7;border:1px solid #e8d090;border-radius:7px;padding:10px 13px;font-size:12px;color:#7a6000;margin-bottom:14px">📝 '+obs+'</div>':'')+
+    fotosHtml+
+    '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:8px">Documento sin validez tributaria. Generado '+hoy()+'</div>'+
+    '</div>'+
+    (preview?'':'<scr'+'ipt>setTimeout(function(){window.print()},400)</scr'+'ipt></body></html>');
+}
+
+function nvGuardar(){
+  var guia=ge('nv-guia-label').textContent;
+  var nv={num:ge('nv-num').value,fecha:ge('nv-fecha').value,obs:ge('nv-obs').value,fotos:nvFotosArr.slice()};
+  // Guardar en todos los registros F2 de esa guía
+  f2.forEach(function(x){
+    if(x.guia===guia){x.notaVenta=nv;}
+  });
+  lsGuardar();
+  // Subir a Supabase cada registro actualizado
+  if(sbOk()){f2.filter(function(x){return x.guia===guia;}).forEach(function(x){sbGuardar('ventas_f2',x);});}
+  closeEdit('modal-nv');
+  renderF2Lista();
+  setMsg('msg-f2','✅ Nota de venta guardada','ok');
+}
+
+function nvImprimir(){
+  var guia=ge('nv-guia-label').textContent;
+  var html=nvGenerarHTML(guia,false);
+  var a=document.createElement('a');
+  a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+  a.download='NotaVenta_'+guia+'.html';
+  a.click();
 }
 
 /* ══ ADJUNTOS ══ */
