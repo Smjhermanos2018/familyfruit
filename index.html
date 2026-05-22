@@ -1477,25 +1477,47 @@ function exportar(tipo){
 
   if((tipo==='f2'||tipo==='full')&&df2.length){
     // Hoja interna
-    var DS2=5;
-    var aV=[['FAMILYFRUIT — F2 ANÁLISIS INTERNO (Confidencial)'],['Generado:',hoy2],[],
-      ['PPM %',PPM,'Cambia este valor si tu tramo PPM cambia'],[],
-      ['N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','P.Compra neto','P.Venta neto','Gastos/kg','Total compra neto','Total venta neto','Gastos total','PPM %','PPM $','Margen/kg','Margen neto total','IVA %','IVA $','Total factura']];
+    // Estructura: fila1=título, fila2=fecha, fila3=vacía, fila4=PPM, fila5=vacía, fila6=encabezados, fila7+=datos
+    var DS2=7;
+    var aV=[
+      ['FAMILYFRUIT — F2 ANÁLISIS INTERNO (Confidencial)'],
+      ['Generado:',hoy2],
+      [],
+      ['PPM %',PPM,'Cambia este valor si tu tramo PPM cambia'],
+      [],
+      ['N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','P.Compra neto','P.Venta neto','Gastos/kg','Total compra neto','Total venta neto','Gastos total','PPM %','PPM $','Margen/kg','Margen neto total','IVA %','IVA $','Total factura']
+    ];
     df2.forEach(function(x,i){
       var r=DS2+i;
       aV.push([x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.kilos,x.pcompra,x.pventa,x.gastos,
-        {f:'F'+r+'*G'+r},{f:'F'+r+'*H'+r},{f:'F'+r+'*I'+r},
-        {f:'$B$4'},{f:'F'+r+'*H'+r+'*$B$4'},
-        {f:'H'+r+'-G'+r+'-I'+r+'-M'+r},{f:'F'+r+'*(H'+r+'-G'+r+'-I'+r+'-M'+r+')'},
-        x.iva,{f:'K'+r+'*(Q'+r+'/100)'},{f:'K'+r+'+R'+r}]);
+        {f:'F'+r+'*G'+r},
+        {f:'F'+r+'*H'+r},
+        {f:'F'+r+'*I'+r},
+        {f:'$B$4'},
+        {f:'F'+r+'*H'+r+'*$B$4'},
+        {f:'H'+r+'-G'+r+'-I'+r+'-N'+r},
+        {f:'F'+r+'*(H'+r+'-G'+r+'-I'+r+'-N'+r+')'},
+        x.iva,
+        {f:'K'+r+'*(Q'+r+'/100)'},
+        {f:'K'+r+'+R'+r}
+      ]);
     });
     var lastV=DS2+df2.length-1;
-    aV.push([]);aV.push(['TOTALES (con filtro)','','','','',{f:'SUBTOTAL(9,F'+DS2+':F'+lastV+')'},'','','',
-      {f:'SUBTOTAL(9,J'+DS2+':J'+lastV+')'},{f:'SUBTOTAL(9,K'+DS2+':K'+lastV+')'},{f:'SUBTOTAL(9,L'+DS2+':L'+lastV+')'},
-      '','','',{f:'SUBTOTAL(9,P'+DS2+':P'+lastV+')'},'',{f:'SUBTOTAL(9,R'+DS2+':R'+lastV+')'},{f:'SUBTOTAL(9,S'+DS2+':S'+lastV+')'}]);
+    aV.push([]);
+    aV.push(['TOTALES (con filtro)','','','','',
+      {f:'SUBTOTAL(9,F'+DS2+':F'+lastV+')'},'','','',
+      {f:'SUBTOTAL(9,J'+DS2+':J'+lastV+')'},
+      {f:'SUBTOTAL(9,K'+DS2+':K'+lastV+')'},
+      {f:'SUBTOTAL(9,L'+DS2+':L'+lastV+')'},
+      '','','',
+      {f:'SUBTOTAL(9,P'+DS2+':P'+lastV+')'},
+      '',
+      {f:'SUBTOTAL(9,R'+DS2+':R'+lastV+')'},
+      {f:'SUBTOTAL(9,S'+DS2+':S'+lastV+')'}
+    ]);
     var wsV=XLSX.utils.aoa_to_sheet(aV);
     wsV['!cols']=[{wch:12},{wch:11},{wch:16},{wch:16},{wch:12},{wch:7},{wch:12},{wch:12},{wch:9},{wch:13},{wch:13},{wch:11},{wch:6},{wch:11},{wch:11},{wch:13},{wch:6},{wch:11},{wch:13}];
-    wsV['!autofilter']={ref:'A5:S5'};
+    wsV['!autofilter']={ref:'A6:S6'};
     XLSX.utils.book_append_sheet(wb,wsV,'F2 Interno');
     // Hoja proveedor
     var CS=5;
