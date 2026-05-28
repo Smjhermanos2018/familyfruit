@@ -1852,9 +1852,12 @@ function exportar(tipo){
       ['N° Liquidación','N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','Precio/kg','Venta bruta','Com. fija/kg','Com. fija total','Com. % venta','Comisión neta','IVA %','IVA $','Total a facturar']];
     df1.forEach(function(x,i){
       var r=DS+i+1;
-      rows.push([x.liqNum||'',x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.kilos,x.pventa,
-        {f:'G'+r+'*H'+r},x.cfija,{f:'G'+r+'*J'+r},{f:'I'+r+'*('+x.cpct+'/100)'},
-        {f:'K'+r+'+L'+r},x.iva,{f:'M'+r+'*(N'+r+'/100)'},{f:'M'+r+'+O'+r}]);
+      var liqTag=x.liqNum||(guiasCobradasF1.has(x.guia)?'(cobrada-sin-num)':'(pendiente)');
+      rows.push([liqTag,x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.kilos,x.pventa,
+        x.kilos*x.pventa,x.cfija,x.kilos*x.cfija,x.kilos*x.pventa*(x.cpct/100),
+        x.kilos*x.cfija+x.kilos*x.pventa*(x.cpct/100),x.iva,
+        (x.kilos*x.cfija+x.kilos*x.pventa*(x.cpct/100))*(x.iva/100),
+        (x.kilos*x.cfija+x.kilos*x.pventa*(x.cpct/100))*(1+x.iva/100)]);
     });
     var last=DS+df1.length;
     rows.push([]);rows.push(['TOTALES (con filtro)','','','','','',{f:'SUBTOTAL(9,G'+(DS+1)+':G'+last+')'},'','',
@@ -1863,6 +1866,38 @@ function exportar(tipo){
     ws['!cols']=[{wch:12},{wch:12},{wch:11},{wch:18},{wch:18},{wch:14},{wch:8},{wch:11},{wch:13},{wch:10},{wch:11},{wch:12},{wch:13},{wch:7},{wch:11},{wch:14}];
     ws['!autofilter']={ref:'A4:P4'};
     XLSX.utils.book_append_sheet(wb,ws,'F1 Comisión');
+
+    // ── Segunda hoja: detalle venta para el productor ──
+    var DS2P=4;
+    var rowsP=[
+      ['FAMILYFRUIT — F1 DETALLE VENTA (Para el productor — valores con IVA)'],
+      ['Generado:',hoy2],
+      [],
+      ['N° Liquidación','N° Guía','Fecha','Proveedor','Especie','Calibre','Kilos','P° Venta neto/kg','P° Venta c/IVA/kg','Venta neta','IVA %','IVA $','Total venta c/IVA']
+    ];
+    df1.forEach(function(x,i){
+      var r=DS2P+i+1;
+      var pNeto=x.pventa;
+      var pIva=x.pventa*(1+x.iva/100);
+      var vNeta=x.kilos*x.pventa;
+      var ivaAmt=vNeta*(x.iva/100);
+      var vTotal=vNeta+ivaAmt;
+      rowsP.push([liqTag,x.guia,x.fecha,x.proveedor,x.fruta,x.calibre||'',x.kilos,pNeto,pIva,vNeta,x.iva,ivaAmt,vTotal]);
+    });
+    var lastP=DS2P+df1.length;
+    rowsP.push([]);
+    rowsP.push(['TOTALES (con filtro)','','','','','',
+      {f:'SUBTOTAL(9,G'+(DS2P+1)+':G'+lastP+')'},
+      '','',
+      {f:'SUBTOTAL(9,J'+(DS2P+1)+':J'+lastP+')'},
+      '',
+      {f:'SUBTOTAL(9,L'+(DS2P+1)+':L'+lastP+')'},
+      {f:'SUBTOTAL(9,M'+(DS2P+1)+':M'+lastP+')'}
+    ]);
+    var wsP=XLSX.utils.aoa_to_sheet(rowsP);
+    wsP['!cols']=[{wch:12},{wch:12},{wch:11},{wch:18},{wch:14},{wch:10},{wch:8},{wch:14},{wch:14},{wch:14},{wch:6},{wch:12},{wch:15}];
+    wsP['!autofilter']={ref:'A4:M4'};
+    XLSX.utils.book_append_sheet(wb,wsP,'F1 Detalle productor');
   }
 
   if((tipo==='f2'||tipo==='full')&&df2.length){
