@@ -1844,6 +1844,7 @@ function pfF2Periodo(dest){
 /* ══ EXCEL ══ */
 function exportar(tipo){
   if(typeof XLSX==='undefined'){setMsg('msg-xls','Cargando librería Excel, intenta en 2 segundos...','err');return;}
+  try{
   var de=v('xd'),ha=v('xh');
   var filtF=function(arr){return arr.filter(function(x){return (!de||x.fecha>=de)&&(!ha||x.fecha<=ha);});};
   var df1=filtF(f1),df2=filtF(f2);
@@ -1978,6 +1979,7 @@ function exportar(tipo){
   var nom=tipo==='f1'?'FF_F1':tipo==='f2'?'FF_F2':'FF_Completo';
   XLSX.writeFile(wb,nom+'_'+hoy2+'.xlsx');
   setMsg('msg-xls','✅ Excel descargado correctamente','ok');
+  }catch(e){setMsg('msg-xls','❌ Error al generar Excel: '+e.message,'err');console.error('Export error:',e);}
 }
 
 /* ══ NOTA DE VENTA F2 ══ */
