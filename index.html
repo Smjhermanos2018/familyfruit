@@ -240,15 +240,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
   </div>
   <!-- SELECTOR MULTI-GUÍA -->
   <div class="card" style="border-left:4px solid var(--g1)">
-    <div class="clbl">📄 Proforma agrupada — selecciona guías a cobrar</div>
-    <p style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.5">Elige una o varias guías (misma especie u otras) y genera una sola proforma con todo agrupado.</p>
+    <div class="clbl">📄 Proforma agrupada — guías pendientes de cobro</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.5">Elige una o varias guías y genera una proforma. Al emitirla quedan marcadas como cobradas.</p>
     <div id="f1-selector" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
-      <div class="empty" style="padding:8px">Sin registros F1</div>
+      <div class="empty" style="padding:8px">Sin guías pendientes</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="bsm bsm-g" onclick="f1SelAll()">☑ Todas</button>
       <button class="bsm" style="background:var(--surf2)" onclick="f1SelNone()">☐ Ninguna</button>
       <button class="btn btn-g" style="flex:1;min-width:160px" onclick="pfF1Seleccion()">📄 Generar proforma seleccionadas</button>
+    </div>
+  </div>
+  <!-- GUÍAS COBRADAS -->
+  <div class="card" style="border-left:4px solid var(--tx3)" id="card-cobradas">
+    <div class="clbl">✅ Guías ya cobradas — clic para re-editar</div>
+    <div id="f1-cobradas" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px">
+      <div class="empty" style="padding:8px">Sin guías cobradas aún</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="bsm bsm-g" onclick="f1SelAllCob()">☑ Todas</button>
+      <button class="bsm" style="background:var(--surf2)" onclick="f1SelNoneCob()">☐ Ninguna</button>
+      <button class="btn" style="flex:1;min-width:160px;background:#555;color:#fff" onclick="f1DevolverPendiente()">↩ Devolver a pendientes</button>
+      <button class="btn btn-g" style="flex:1;min-width:160px" onclick="pfF1SeleccionCob()">📄 Re-emitir proforma</button>
     </div>
   </div>
   <div class="card">
@@ -604,6 +617,7 @@ function lsGuardar(){
     localStorage.setItem('ff_f1',JSON.stringify(f1));
     localStorage.setItem('ff_f2',JSON.stringify(f2));
     localStorage.setItem('ff_cfg',JSON.stringify(cfg));
+    localStorage.setItem('ff_cobradas',JSON.stringify([...guiasCobradasF1]));
   }catch(e){console.warn('localStorage lleno',e);}
 }
 function lsCargar(){
@@ -611,6 +625,7 @@ function lsCargar(){
     var d1=localStorage.getItem('ff_f1');if(d1){f1=JSON.parse(d1);}
     var d2=localStorage.getItem('ff_f2');if(d2){f2=JSON.parse(d2);}
     var dc=localStorage.getItem('ff_cfg');if(dc){cfg=JSON.parse(dc);}
+    var dCob=localStorage.getItem('ff_cobradas');if(dCob){guiasCobradasF1=new Set(JSON.parse(dCob));}
   }catch(e){console.warn('Error cargando localStorage',e);}
 }
 
@@ -760,10 +775,18 @@ function calcF2(){
 }
 
 /* ══ F1 SELECTOR MULTI-GUÍA ══ */
+// guiasCobradasF1: Set de números de guía ya cobrados
+var guiasCobradasF1=new Set();
+
 function renderF1Selector(){
-  var el=ge('f1-selector');if(!el) return;
-  if(!f1.length){el.innerHTML='<div class="empty" style="padding:8px">Sin registros F1</div>';return;}
-  // Obtener guías únicas con resumen
+  var elP=ge('f1-selector'),elC=ge('f1-cobradas');
+  if(!elP||!elC) return;
+  if(!f1.length){
+    elP.innerHTML='<div class="empty" style="padding:8px">Sin guías pendientes</div>';
+    elC.innerHTML='<div class="empty" style="padding:8px">Sin guías cobradas aún</div>';
+    return;
+  }
+  // Agrupar guías únicas
   var guias={};
   f1.forEach(function(x){
     if(!guias[x.guia]){guias[x.guia]={guia:x.guia,fecha:x.fecha,frutas:[],kg:0,neto:0};}
@@ -771,22 +794,57 @@ function renderF1Selector(){
     guias[x.guia].kg+=x.kilos;
     guias[x.guia].neto+=x.neto;
   });
-  el.innerHTML=Object.values(guias).map(function(g){
-    var label='Guía '+g.guia+' · '+g.fecha+' · '+[...new Set(g.frutas)].join(', ')+' · '+Math.round(g.kg).toLocaleString('es-CL')+' kg · $'+Math.round(g.neto).toLocaleString('es-CL');
-    return '<label style="display:flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;width:100%">'+
-      '<input type="checkbox" class="f1-chk" value="'+g.guia+'" style="width:16px;height:16px;cursor:pointer"/>'+
+
+  function mkChk(g,cls,cobrada){
+    var label='<strong>Guía '+g.guia+'</strong> · '+g.fecha+' · '+[...new Set(g.frutas)].join(', ')+' · '+Math.round(g.kg).toLocaleString('es-CL')+' kg · $'+Math.round(g.neto).toLocaleString('es-CL');
+    var bg=cobrada?'var(--surf2)':'var(--gl)';
+    var border=cobrada?'var(--bd)':'var(--gm)';
+    return '<label style="display:flex;align-items:center;gap:6px;background:'+bg+';border:1px solid '+border+';border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;width:100%">'+
+      '<input type="checkbox" class="'+cls+'" value="'+g.guia+'" style="width:16px;height:16px;cursor:pointer"/>'+
       '<span>'+label+'</span>'+
     '</label>';
-  }).join('');
+  }
+
+  var pendientes=Object.values(guias).filter(function(g){return !guiasCobradasF1.has(g.guia);});
+  var cobradas=Object.values(guias).filter(function(g){return guiasCobradasF1.has(g.guia);});
+
+  elP.innerHTML=pendientes.length?pendientes.map(function(g){return mkChk(g,'f1-chk',false);}).join(''):'<div class="empty" style="padding:8px">✅ Todas las guías cobradas</div>';
+  elC.innerHTML=cobradas.length?cobradas.map(function(g){return mkChk(g,'f1-chk-cob',true);}).join(''):'<div class="empty" style="padding:8px">Sin guías cobradas aún</div>';
 }
+
 function f1SelAll(){document.querySelectorAll('.f1-chk').forEach(function(c){c.checked=true;});}
 function f1SelNone(){document.querySelectorAll('.f1-chk').forEach(function(c){c.checked=false;});}
+function f1SelAllCob(){document.querySelectorAll('.f1-chk-cob').forEach(function(c){c.checked=true;});}
+function f1SelNoneCob(){document.querySelectorAll('.f1-chk-cob').forEach(function(c){c.checked=false;});}
+
+function f1DevolverPendiente(){
+  var sel=[];
+  document.querySelectorAll('.f1-chk-cob:checked').forEach(function(c){sel.push(c.value);});
+  if(!sel.length){alert('Selecciona al menos una guía cobrada');return;}
+  sel.forEach(function(g){guiasCobradasF1.delete(g);});
+  lsGuardar();
+  renderF1Selector();
+}
 
 function pfF1Seleccion(){
   var selGuias=[];
   document.querySelectorAll('.f1-chk:checked').forEach(function(c){selGuias.push(c.value);});
   if(!selGuias.length){alert('Selecciona al menos una guía');return;}
+  // Marcar como cobradas
+  selGuias.forEach(function(g){guiasCobradasF1.add(g);});
+  lsGuardar();
+  renderF1Selector();
+  _pfF1Generar(selGuias);
+}
 
+function pfF1SeleccionCob(){
+  var selGuias=[];
+  document.querySelectorAll('.f1-chk-cob:checked').forEach(function(c){selGuias.push(c.value);});
+  if(!selGuias.length){alert('Selecciona al menos una guía');return;}
+  _pfF1Generar(selGuias);
+}
+
+function _pfF1Generar(selGuias){
   // Tomar todos los registros F1 de las guías seleccionadas
   var regs=f1.filter(function(x){return selGuias.indexOf(x.guia)!==-1;});
   var iva=regs[0].iva||19;
