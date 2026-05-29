@@ -226,7 +226,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="qe-fld"><label>Kilos *</label><input id="f1-k" type="number" placeholder="0" inputmode="decimal" oninput="calcF1()"/></div>
     </div>
     <div class="fr2" style="margin-top:7px">
-      <div class="qe-fld"><label>Precio venta neto ($/kg) *</label><input id="f1-pv" type="number" placeholder="0" inputmode="decimal" oninput="calcF1()"/></div>
+      <div class="qe-fld"><label>Precio venta c/IVA ($/kg) *</label><input id="f1-pv" type="number" placeholder="0" inputmode="decimal" oninput="calcF1()"/></div>
       <div class="qe-fld"><label>IVA %</label><input id="f1-iva" type="number" value="19" inputmode="decimal" oninput="calcF1()"/></div>
     </div>
     <div class="fr2" style="margin-top:7px">
@@ -310,8 +310,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="qe-fld"><label>Kilos *</label><input id="f2-k" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
     </div>
     <div class="fr3" style="margin-top:7px">
-      <div class="qe-fld"><label>P. Compra neto ($/kg) *</label><input id="f2-pc" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
-      <div class="qe-fld"><label>P. Venta neto ($/kg) *</label><input id="f2-pv" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
+      <div class="qe-fld"><label>P. Compra c/IVA ($/kg) *</label><input id="f2-pc" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
+      <div class="qe-fld"><label>P. Venta c/IVA ($/kg) *</label><input id="f2-pv" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
       <div class="qe-fld"><label>Gastos op. ($/kg)</label><input id="f2-ga" type="number" placeholder="0" inputmode="decimal" oninput="calcF2()"/></div>
     </div>
     <div class="fr2" style="margin-top:7px">
@@ -464,7 +464,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="fld"><label>Kilos</label><input id="ef1-k" type="number" inputmode="decimal"/></div>
     </div>
     <div class="fr2">
-      <div class="fld"><label>Precio venta ($/kg)</label><input id="ef1-pv" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>Precio venta c/IVA ($/kg)</label><input id="ef1-pv" type="number" inputmode="decimal"/></div>
       <div class="fld"><label>IVA %</label><input id="ef1-iva" type="number"/></div>
     </div>
     <div class="fr2">
@@ -503,8 +503,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
       <div class="fld"><label>Kilos</label><input id="ef2-k" type="number" inputmode="decimal"/></div>
     </div>
     <div class="fr3">
-      <div class="fld"><label>P. Compra ($/kg)</label><input id="ef2-pc" type="number" inputmode="decimal"/></div>
-      <div class="fld"><label>P. Venta ($/kg)</label><input id="ef2-pv" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>P. Compra c/IVA ($/kg)</label><input id="ef2-pc" type="number" inputmode="decimal"/></div>
+      <div class="fld"><label>P. Venta c/IVA ($/kg)</label><input id="ef2-pv" type="number" inputmode="decimal"/></div>
       <div class="fld"><label>Gastos ($/kg)</label><input id="ef2-ga" type="number" inputmode="decimal"/></div>
     </div>
     <div class="fld"><label>IVA %</label><input id="ef2-iva" type="number"/></div>
@@ -1063,9 +1063,11 @@ function _pfF1Generar(selGuias,liqNum,liqFecha){
 
 function addF1(){
   var guia=v('f1-g').trim();if(!guia){setMsg('msg-f1','Ingresa N° de guía','err');return;}
-  var kg=pf('f1-k'),pv=pf('f1-pv');if(!kg||!pv){setMsg('msg-f1','Completa kilos y precio','err');return;}
-  var cf=pf('f1-cf'),cp=pf('f1-cp'),iva=pf('f1-iva'),vn=kg*pv,comF=kg*cf,comP=vn*(cp/100),neto=comF+comP,ivaAmt=neto*(iva/100),total=neto+ivaAmt;
-  var rec={id:Date.now(),guia:guia,fecha:v('f1-f'),cliente:v('f1-cl'),proveedor:v('f1-pr'),fruta:v('f1-fr'),calibre:v('f1-cal'),kilos:kg,pventa:pv,cfija:cf,cpct:cp,iva:iva,bruta:vn,comF:comF,comP:comP,neto:neto,ivaAmt:ivaAmt,total:total};
+  var pvIva=pf('f1-pv');if(!kg||!pvIva){setMsg('msg-f1','Completa kilos y precio','err');return;}
+  var cf=pf('f1-cf'),cp=pf('f1-cp'),iva=pf('f1-iva');
+  var pv=pvIva/(1+iva/100); // neto interno
+  var vn=kg*pv,comF=kg*cf,comP=vn*(cp/100),neto=comF+comP,ivaAmt=neto*(iva/100),total=neto+ivaAmt;
+  var rec={id:Date.now(),guia:guia,fecha:v('f1-f'),cliente:v('f1-cl'),proveedor:v('f1-pr'),fruta:v('f1-fr'),calibre:v('f1-cal'),kilos:kg,pventaIva:pvIva,pventa:pv,cfija:cf,cpct:cp,iva:iva,bruta:vn,comF:comF,comP:comP,neto:neto,ivaAmt:ivaAmt,total:total};
   f1.push(rec);
   ['f1-g','f1-cl','f1-k','f1-pv'].forEach(function(id){sv(id,'');});sv('f1-fr','');sv('f1-cal','');sv('f1-pr','');
   ge('f1-prev-calc').style.display='none';
@@ -1081,15 +1083,16 @@ renderF1Lista();renderDash();
 function openEditF1(id){
   var x=f1.find(function(r){return r.id===id;});if(!x){return;}
   sv('ef1-id',id);sv('ef1-g',x.guia);sv('ef1-f',x.fecha);sv('ef1-cl',x.cliente);sv('ef1-pr',x.proveedor);
-  sv('ef1-fr',x.fruta||'');sv('ef1-cal',x.calibre||'');sv('ef1-k',x.kilos);sv('ef1-pv',x.pventa);sv('ef1-cf',x.cfija);sv('ef1-cp',x.cpct);sv('ef1-iva',x.iva);
+  sv('ef1-fr',x.fruta||'');sv('ef1-cal',x.calibre||'');sv('ef1-k',x.kilos);sv('ef1-pv',x.pventaIva||Math.round(x.pventa*(1+x.iva/100)));sv('ef1-cf',x.cfija);sv('ef1-cp',x.cpct);sv('ef1-iva',x.iva);
   ge('edit-f1').classList.add('on');
 }
 function saveF1(){
   var id=parseInt(v('ef1-id'));
-  var kg=pf('ef1-k'),pv=pf('ef1-pv'),cf=pf('ef1-cf'),cp=pf('ef1-cp'),iva=pf('ef1-iva');
+  var pvIva=pf('ef1-pv'),cf=pf('ef1-cf'),cp=pf('ef1-cp'),iva=pf('ef1-iva');
+  var pv=pvIva/(1+iva/100);
   var vn=kg*pv,comF=kg*cf,comP=vn*(cp/100),neto=comF+comP,ivaAmt=neto*(iva/100),total=neto+ivaAmt;
   var x=f1.find(function(r){return r.id===id;});
-  if(x){Object.assign(x,{guia:v('ef1-g'),fecha:v('ef1-f'),cliente:v('ef1-cl'),proveedor:v('ef1-pr'),fruta:v('ef1-fr'),calibre:v('ef1-cal'),kilos:kg,pventa:pv,cfija:cf,cpct:cp,iva:iva,bruta:vn,comF:comF,comP:comP,neto:neto,ivaAmt:ivaAmt,total:total});}
+  if(x){Object.assign(x,{guia:v('ef1-g'),fecha:v('ef1-f'),cliente:v('ef1-cl'),proveedor:v('ef1-pr'),fruta:v('ef1-fr'),calibre:v('ef1-cal'),kilos:kg,pventaIva:pvIva,pventa:pv,cfija:cf,cpct:cp,iva:iva,bruta:vn,comF:comF,comP:comP,neto:neto,ivaAmt:ivaAmt,total:total});}
   lsGuardar();if(sbOk()&&x)sbGuardar('ventas_f1',x);
 closeEdit('edit-f1');renderF1Lista();renderDash();
 }
@@ -1122,9 +1125,10 @@ function renderF1Lista(){
 function addF2(){
   var guia=v('f2-g').trim();if(!guia){setMsg('msg-f2','Ingresa N° de guía','err');return;}
   var kg=pf('f2-k');if(!kg){setMsg('msg-f2','Completa los kilos','err');return;}
-  var pc=pf('f2-pc'),pv=pf('f2-pv'),ga=pf('f2-ga'),iva=pf('f2-iva');
+  var pcIva=pf('f2-pc'),pvIva=pf('f2-pv'),ga=pf('f2-ga'),iva=pf('f2-iva');
+  var pc=pcIva/(1+iva/100),pv=pvIva/(1+iva/100);
   var venta=kg*pv,compra=kg*pc,ppm=venta*PPM,margen=venta-compra-ppm-(ga*kg),ivaAmt=venta*(iva/100),total=venta+ivaAmt;
-  var rec={id:Date.now(),guia:guia,fecha:v('f2-f'),cliente:v('f2-cl'),proveedor:v('f2-pr'),fruta:v('f2-fr'),calibre:v('f2-cal'),kilos:kg,pcompra:pc,pventa:pv,gastos:ga,iva:iva,venta:venta,compra:compra,ppm:ppm,margen:margen,ivaAmt:ivaAmt,total:total};
+  var rec={id:Date.now(),guia:guia,fecha:v('f2-f'),cliente:v('f2-cl'),proveedor:v('f2-pr'),fruta:v('f2-fr'),calibre:v('f2-cal'),kilos:kg,pcompraIva:pcIva,pventa:pv,pcompra:pc,pventaIva:pvIva,gastos:ga,iva:iva,venta:venta,compra:compra,ppm:ppm,margen:margen,ivaAmt:ivaAmt,total:total};
   f2.push(rec);
   ['f2-g','f2-cl','f2-k','f2-pc','f2-pv','f2-ga'].forEach(function(id){sv(id,'');});sv('f2-fr','');sv('f2-pr','');sv('f2-cal','');
   ge('f2-prev-calc').style.display='none';ge('f2-ppm').value='';
@@ -1140,15 +1144,16 @@ renderF2Lista();renderDash();
 function openEditF2(id){
   var x=f2.find(function(r){return r.id===id;});if(!x){return;}
   sv('ef2-id',id);sv('ef2-g',x.guia);sv('ef2-f',x.fecha);sv('ef2-cl',x.cliente);sv('ef2-pr',x.proveedor);
-  sv('ef2-pr',x.proveedor||'');sv('ef2-fr',x.fruta||'');sv('ef2-cal',x.calibre||'');sv('ef2-k',x.kilos);sv('ef2-pc',x.pcompra);sv('ef2-pv',x.pventa);sv('ef2-ga',x.gastos);sv('ef2-iva',x.iva);
+  sv('ef2-pr',x.proveedor||'');sv('ef2-fr',x.fruta||'');sv('ef2-cal',x.calibre||'');sv('ef2-k',x.kilos);sv('ef2-pc',x.pcompraIva||Math.round(x.pcompra*(1+x.iva/100)));sv('ef2-pv',x.pventaIva||Math.round(x.pventa*(1+x.iva/100)));sv('ef2-ga',x.gastos);sv('ef2-iva',x.iva);
   ge('edit-f2').classList.add('on');
 }
 function saveF2(){
   var id=parseInt(v('ef2-id'));
-  var kg=pf('ef2-k'),pc=pf('ef2-pc'),pv=pf('ef2-pv'),ga=pf('ef2-ga'),iva=pf('ef2-iva');
+  var pcIva=pf('ef2-pc'),pvIva=pf('ef2-pv'),ga=pf('ef2-ga'),iva=pf('ef2-iva');
+  var pc=pcIva/(1+iva/100),pv=pvIva/(1+iva/100);
   var venta=kg*pv,compra=kg*pc,ppm=venta*PPM,margen=venta-compra-ppm-(ga*kg),ivaAmt=venta*(iva/100),total=venta+ivaAmt;
   var x=f2.find(function(r){return r.id===id;});
-  if(x){Object.assign(x,{guia:v('ef2-g'),fecha:v('ef2-f'),cliente:v('ef2-cl'),proveedor:v('ef2-pr'),fruta:v('ef2-fr'),calibre:v('ef2-cal'),kilos:kg,pcompra:pc,pventa:pv,gastos:ga,iva:iva,venta:venta,compra:compra,ppm:ppm,margen:margen,ivaAmt:ivaAmt,total:total});}
+  if(x){Object.assign(x,{guia:v('ef2-g'),fecha:v('ef2-f'),cliente:v('ef2-cl'),proveedor:v('ef2-pr'),fruta:v('ef2-fr'),calibre:v('ef2-cal'),kilos:kg,pcompraIva:pcIva,pcompra:pc,pventaIva:pvIva,pventa:pv,gastos:ga,iva:iva,venta:venta,compra:compra,ppm:ppm,margen:margen,ivaAmt:ivaAmt,total:total});}
   lsGuardar();if(sbOk()&&x)sbGuardar('ventas_f2',x);
 closeEdit('edit-f2');renderF2Lista();renderDash();
 }
@@ -1854,11 +1859,11 @@ function exportar(tipo){
   if((tipo==='f1'||tipo==='full')&&df1.length){
     var DS=4;
     var rows=[['FAMILYFRUIT — VENTAS F1 COMISIÓN (Valores netos sin IVA)'],['Generado:',hoy2],[],
-      ['N° Liquidación','N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','Precio/kg','Venta bruta','Com. fija/kg','Com. fija total','Com. % venta','Comisión neta','IVA %','IVA $','Total a facturar']];
+      ['N° Liquidación','N° Guía','Fecha','Cliente','Proveedor','Fruta','Kilos','Precio/kg','Venta neta','Com. fija/kg','Com. fija total','Com. % venta','Comisión neta','IVA %','IVA $','Total a facturar']];
     var rowsP=[
       ['FAMILYFRUIT — F1 DETALLE VENTA (Para el productor — valores con IVA)'],
       ['Generado:',hoy2],[],
-      ['N° Liquidación','N° Guía','Fecha','Proveedor','Especie','Calibre','Kilos','P° Venta neto/kg','P° Venta c/IVA/kg','Venta neta','IVA %','IVA $','Total venta c/IVA']
+      ['N° Liquidación','N° Guía','Fecha','Cliente','Proveedor','Especie','Calibre','Kilos','P° Venta neto/kg','P° Venta c/IVA/kg','Venta neta','IVA %','IVA $','Total venta c/IVA']
     ];
     df1.forEach(function(x){
       var liqTag=x.liqNum||(guiasCobradasF1.has(x.guia)?'(cobrada-sin-num)':'(pendiente)');
@@ -1869,11 +1874,12 @@ function exportar(tipo){
       var total=neto+ivaC;
       rows.push([liqTag,x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.kilos,x.pventa,
         x.kilos*x.pventa,x.cfija,comF,comP,neto,x.iva,ivaC,total]);
-      var pIva=x.pventa*(1+x.iva/100);
+      var pIva=Math.round(x.pventa*(1+x.iva/100));
       var vNeta=x.kilos*x.pventa;
-      var ivaV=vNeta*(x.iva/100);
-      rowsP.push([liqTag,x.guia,x.fecha,x.proveedor,x.fruta,x.calibre||'',x.kilos,
-        x.pventa,pIva,vNeta,x.iva,ivaV,vNeta+ivaV]);
+      var ivaV=Math.round(x.kilos*pIva - vNeta);
+      var vTotal=x.kilos*pIva;
+      rowsP.push([liqTag,x.guia,x.fecha,x.cliente,x.proveedor,x.fruta,x.calibre||'',x.kilos,
+        x.pventa,pIva,vNeta,x.iva,ivaV,vTotal]);
     });
     var last=DS+df1.length;
     rows.push([]);
@@ -1885,19 +1891,38 @@ function exportar(tipo){
     var ws=XLSX.utils.aoa_to_sheet(rows);
     ws['!cols']=[{wch:14},{wch:10},{wch:11},{wch:16},{wch:16},{wch:12},{wch:7},{wch:10},{wch:12},{wch:9},{wch:11},{wch:11},{wch:12},{wch:6},{wch:11},{wch:13}];
     ws['!autofilter']={ref:'A4:P4'};
+    // Formato pesos hoja comisión
+    var fmtPeso='"$"#,##0.##';
+    var colsF1=[7,8,10,11,12,14,15];
+    var rangeF1=XLSX.utils.decode_range(ws['!ref']);
+    for(var R=rangeF1.s.r;R<=rangeF1.e.r;R++){
+      colsF1.forEach(function(C){
+        var addr=XLSX.utils.encode_cell({r:R,c:C});
+        if(ws[addr]&&typeof ws[addr].v==='number'){ws[addr].t='n';ws[addr].z=fmtPeso;}
+      });
+    }
     XLSX.utils.book_append_sheet(wb,ws,'F1 Comisión');
 
     var lastP=4+df1.length;
     rowsP.push([]);
-    rowsP.push(['TOTALES (con filtro)','','','','','',
-      {f:'SUBTOTAL(9,G5:G'+lastP+')'},'','',
-      {f:'SUBTOTAL(9,J5:J'+lastP+')'},
+    rowsP.push(['TOTALES (con filtro)','','','','','','',
+      {f:'SUBTOTAL(9,H5:H'+lastP+')'},'','',
+      {f:'SUBTOTAL(9,K5:K'+lastP+')'},
       '',
-      {f:'SUBTOTAL(9,L5:L'+lastP+')'},
-      {f:'SUBTOTAL(9,M5:M'+lastP+')'}]);
+      {f:'SUBTOTAL(9,M5:M'+lastP+')'},
+      {f:'SUBTOTAL(9,N5:N'+lastP+')'}]);
     var wsP=XLSX.utils.aoa_to_sheet(rowsP);
-    wsP['!cols']=[{wch:14},{wch:10},{wch:11},{wch:16},{wch:12},{wch:9},{wch:7},{wch:13},{wch:13},{wch:13},{wch:6},{wch:11},{wch:14}];
-    wsP['!autofilter']={ref:'A4:M4'};
+    wsP['!cols']=[{wch:14},{wch:10},{wch:11},{wch:16},{wch:16},{wch:12},{wch:9},{wch:7},{wch:13},{wch:13},{wch:13},{wch:6},{wch:11},{wch:14}];
+    wsP['!autofilter']={ref:'A4:N4'};
+    // Formato pesos hoja productor
+    var colsP=[8,9,10,12,13];
+    var rangeP=XLSX.utils.decode_range(wsP['!ref']);
+    for(var R2=rangeP.s.r;R2<=rangeP.e.r;R2++){
+      colsP.forEach(function(C){
+        var addr=XLSX.utils.encode_cell({r:R2,c:C});
+        if(wsP[addr]&&typeof wsP[addr].v==='number'){wsP[addr].t='n';wsP[addr].z=fmtPeso;}
+      });
+    }
     XLSX.utils.book_append_sheet(wb,wsP,'F1 Detalle productor');
   }
 
