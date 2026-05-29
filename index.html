@@ -696,11 +696,18 @@ async function sbSincronizar(){
     var r2=await fetch(SB_URL+'/rest/v1/ventas_f2?select=*&order=fecha.asc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
     var d2=await r2.json();
     if(Array.isArray(d1)&&d1.length){
-      // Merge: mantener fotos locales que no están en la nube
-      var localFotos={};
-      f1.forEach(function(x){if(x.adj&&x.adj.foto&&x.adj.foto!=='[foto_local]'){localFotos[x.id]=x.adj.foto;}});
-      f1=d1;
-      f1.forEach(function(x){if(localFotos[x.id]){if(!x.adj)x.adj={};x.adj.foto=localFotos[x.id];}});
+      var localData1={};
+      f1.forEach(function(x){localData1[x.id]=x;});
+      f1=d1.map(function(x){
+        var local=localData1[x.id];
+        if(local){
+          // Preservar campos que solo existen localmente
+          if(local.liqNum&&!x.liqNum) x.liqNum=local.liqNum;
+          if(local.liqFecha&&!x.liqFecha) x.liqFecha=local.liqFecha;
+          if(local.adj&&!x.adj) x.adj=local.adj;
+        }
+        return x;
+      });
     }
     if(Array.isArray(d2)&&d2.length){
       var localFotos2={};
