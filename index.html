@@ -1096,6 +1096,7 @@ function _pfF1Generar(selGuias,liqNum,liqFecha){
 
 function addF1(){
   var guia=v('f1-g').trim();if(!guia){setMsg('msg-f1','Ingresa N° de guía','err');return;}
+  var kg=pf('f1-k');
   var pvIva=pf('f1-pv');if(!kg||!pvIva){setMsg('msg-f1','Completa kilos y precio','err');return;}
   var cf=pf('f1-cf'),cp=pf('f1-cp'),iva=pf('f1-iva');
   var pv=pvIva/(1+iva/100); // neto interno
