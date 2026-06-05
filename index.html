@@ -632,7 +632,7 @@ function lsGuardar(){
     localStorage.setItem('ff_f1',JSON.stringify(f1));
     localStorage.setItem('ff_f2',JSON.stringify(f2));
     localStorage.setItem('ff_cfg',JSON.stringify(cfg));
-    localStorage.setItem('ff_cobradas',JSON.stringify([...guiasCobradasF1]));
+    localStorage.setItem('ff_cobradas',JSON.stringify(Array.from(guiasCobradasF1)));
   }catch(e){console.warn('localStorage lleno',e);}
 }
 function lsCargar(){
@@ -820,7 +820,7 @@ function renderF1Selector(){
 
   function mkChk(g,cls,cobrada){
     var liqActual=g.liqNum||'';
-    var label='<strong>Guía '+g.guia+'</strong> · '+g.fecha+' · '+[...new Set(g.frutas)].join(', ')+' · '+Math.round(g.kg).toLocaleString('es-CL')+' kg · $'+Math.round(g.neto).toLocaleString('es-CL');
+    var label='<strong>Guía '+g.guia+'</strong> · '+g.fecha+' · '+Array.from(new Set(g.frutas)).join(', ')+' · '+Math.round(g.kg).toLocaleString('es-CL')+' kg · $'+Math.round(g.neto).toLocaleString('es-CL');
     var bg=cobrada?'var(--surf2)':'var(--gl)';
     var border=cobrada?'var(--bd)':'var(--gm)';
     var editLiq=cobrada?
@@ -854,7 +854,7 @@ function renderF1Selector(){
     var clientes=new Set();
     f1.filter(function(x){return guiasCobradasF1.has(x.guia);}).forEach(function(x){if(x.proveedor)clientes.add(x.proveedor);});
     while(selCl.options.length>1){selCl.remove(1);}
-    [...clientes].sort().forEach(function(cl){var o=document.createElement('option');o.value=cl;o.textContent=cl;selCl.appendChild(o);});
+    Array.from(clientes).sort().forEach(function(cl){var o=document.createElement('option');o.value=cl;o.textContent=cl;selCl.appendChild(o);});
     if(actual){selCl.value=actual;}
   }
   renderResumenCobro();
@@ -902,7 +902,7 @@ function renderResumenCobro(){
       '<td style="padding:8px 6px;font-weight:600">'+cl+'</td>'+
       '<td style="padding:8px 6px;text-align:center">'+
         '<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">'+
-        [...d.guias].map(function(g){return '<span style="background:var(--gl);color:#2d6a11;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700">'+g+'</span>';}).join('')+
+        Array.from(d.guias).map(function(g){return '<span style="background:var(--gl);color:#2d6a11;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700">'+g+'</span>';}).join('')+
         '</div>'+
       '</td>'+
       '<td style="padding:8px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
