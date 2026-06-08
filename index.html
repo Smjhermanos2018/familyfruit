@@ -2397,6 +2397,8 @@ function pfgActualizar(){
 
   // Filtrar registros con LDV emitida, ese proveedor y especie
   var regs=f1.filter(function(x){return x.liqNum&&x.proveedor===prov&&x.fruta===esp;});
+  // Debug: log para ver qué registros se encuentran
+  console.log('Registros encontrados:',regs.length,regs.map(function(x){return x.guia+'/'+x.kilos+'kg/'+x.liqNum+'/'+x.fruta;}));
   if(!regs.length){ge('pfg-preview').style.display='none';ge('pfg-empty').style.display='block';return;}
   ge('pfg-empty').style.display='none';ge('pfg-preview').style.display='block';
 
