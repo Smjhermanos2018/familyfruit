@@ -190,6 +190,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
     <button class="pill" onclick="nav('f2',this)">🛒 F2 Compra/Venta</button>
     <button class="pill" onclick="nav('rep',this)">📊 Reportes</button>
     <button class="pill" onclick="nav('xls',this)">📥 Exportar</button>
+    <button class="pill" onclick="nav('pfgen',this)">🧾 Generar Proforma</button>
     <button class="pill" onclick="nav('cfg',this)">⚙️ Mis datos</button>
   </div>
 </div>
@@ -379,6 +380,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;ba
     <button class="btn btn-g" onclick="exportar('full')">⬇ Descargar Excel completo</button>
   </div>
   <div id="msg-xls"></div>
+</div>
+
+<!-- GENERADOR PROFORMA POR ESPECIE -->
+<div id="scr-pfgen" class="scr">
+  <div class="card" style="border-left:4px solid var(--g1)">
+    <div class="clbl">🧾 Generador de proforma por especie</div>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:12px;line-height:1.6">
+      Selecciona el proveedor y la especie. Se agrupan todas las LDV emitidas y genera una proforma de cobro por servicios de comercialización.
+    </p>
+    <div class="fr2">
+      <div class="fld">
+        <label>Proveedor</label>
+        <select id="pfg-prov" onchange="pfgActualizar()">
+          <option value="">Seleccionar...</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Especie</label>
+        <select id="pfg-esp" onchange="pfgActualizar()">
+          <option value="">Seleccionar...</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="pfg-preview" style="display:none">
+    <div class="card" style="background:var(--surf2)">
+      <div class="clbl">Vista previa — LDV incluidas</div>
+      <div id="pfg-ldv-lista" style="margin-bottom:12px"></div>
+      <div id="pfg-totales" style="background:var(--surf);border-radius:var(--rs);padding:12px"></div>
+    </div>
+    <button class="btn btn-g" onclick="pfgGenerar()">📄 Generar e imprimir proforma</button>
+  </div>
+  <div class="empty" id="pfg-empty" style="display:none">No hay LDV emitidas para ese proveedor y especie.</div>
 </div>
 
 <!-- CONFIG -->
@@ -620,7 +654,7 @@ function nav(id,pill,bi){
   ge('scr-'+id).classList.add('on');
   if(pill){document.querySelectorAll('.pill').forEach(function(p){p.classList.remove('on');});pill.classList.add('on');}
   if(bi){document.querySelectorAll('.bi').forEach(function(b){b.classList.remove('on');});bi.classList.add('on');}
-  var map={dash:renderDash,rep:genRep,cfg:loadCfg};
+  var map={dash:renderDash,rep:genRep,cfg:loadCfg,pfgen:pfgInit};
   if(map[id]){map[id]();}
 }
 
@@ -997,14 +1031,20 @@ function _pfF1Generar(selGuias,liqNum,liqFecha){
     return 'Comercial';
   }
 
-  // Agrupar por especie → clasificación
+  // Agrupar por especie → clasificación → precio (clave única para no pisar registros distintos)
   var byEspCal={};
+  var ordenClas=[];
   regs.forEach(function(r){
     var esp=r.fruta||'Sin especie';
     var clas=clasificar(r.calibre);
+    // Clave única: clasificación + precio para separar registros con mismo calibre pero distinto precio
+    var clave=clas+'|'+Math.round(r.pventa*100);
     if(!byEspCal[esp]) byEspCal[esp]={};
-    if(!byEspCal[esp][clas]) byEspCal[esp][clas]={kg:0,sumPV:0,comF:0,comP:0,neto:0,cfija:r.cfija,cpct:r.cpct};
-    var d=byEspCal[esp][clas];
+    if(!byEspCal[esp][clave]){
+      byEspCal[esp][clave]={kg:0,sumPV:0,comF:0,comP:0,neto:0,cfija:r.cfija,cpct:r.cpct,clas:clas,pventa:r.pventa};
+      if(ordenClas.indexOf(esp+'|'+clave)===-1) ordenClas.push(esp+'|'+clave);
+    }
+    var d=byEspCal[esp][clave];
     d.kg+=r.kilos; d.sumPV+=r.pventa*r.kilos;
     d.comF+=r.comF; d.comP+=r.comP; d.neto+=r.neto;
   });
@@ -1017,21 +1057,24 @@ function _pfF1Generar(selGuias,liqNum,liqFecha){
     var clasMap=byEspCal[esp];
     var espKg=0,espNeto=0;
     filas+='<tr style="background:#f0f7ec"><td colspan="5" style="padding:6px 8px;font-weight:700;font-size:12px;color:#1a3d1a">🌿 '+esp+'</td></tr>';
-    ORDEN.forEach(function(clas){
-      if(!clasMap[clas]) return;
-      var d=clasMap[clas];
+    // Ordenar claves por clasificación
+    var claves=Object.keys(clasMap).sort(function(a,b){
+      return ORDEN.indexOf(clasMap[a].clas)-ORDEN.indexOf(clasMap[b].clas);
+    });
+    claves.forEach(function(clave){
+      var d=clasMap[clave];
       var ppVenta=d.kg>0?Math.round(d.sumPV/d.kg):0;
       var comF=Math.round(d.comF),comP=Math.round(d.comP),neto=Math.round(d.neto);
       espKg+=d.kg; espNeto+=neto; totalKg+=d.kg; totalNeto+=neto; totalComF+=comF; totalComP+=comP;
       filas+='<tr style="border-bottom:1px solid #eee">'+
-        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+clas+'</td>'+
+        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+d.clas+'</td>'+
         '<td style="padding:7px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
         '<td style="padding:7px 6px;text-align:right">$'+ppVenta.toLocaleString('es-CL')+'/kg</td>'+
         '<td style="padding:7px 6px;font-size:10px;color:#555">'+Math.round(d.kg)+' kg × $'+d.cfija+' = $'+comF.toLocaleString('es-CL')+'<br>$'+Math.round(d.sumPV).toLocaleString('es-CL')+' × '+d.cpct+'% = $'+comP.toLocaleString('es-CL')+'</td>'+
         '<td style="padding:7px 6px;text-align:right;font-weight:700;color:#1a3d1a">$'+neto.toLocaleString('es-CL')+'</td>'+
       '</tr>';
     });
-    var clasCount=ORDEN.filter(function(c){return clasMap[c];}).length;
+    var clasCount=claves.length;
     if(clasCount>1){
       filas+='<tr style="background:#eaf3de;font-style:italic">'+
         '<td style="padding:7px 8px;font-weight:600">Subtotal '+esp+'</td>'+
@@ -1574,14 +1617,15 @@ function pfF1Individual(id){
     return 'Comercial';
   }
 
-  // Agrupar por especie → clasificación
+  // Agrupar por especie → clasificación+precio (clave única para no pisar registros distintos)
   var byEspCal={};
   regs.forEach(function(r){
     var esp=r.fruta||'Sin especie';
     var clas=clasificar(r.calibre);
+    var clave=clas+'|'+Math.round(r.pventa*100);
     if(!byEspCal[esp]) byEspCal[esp]={};
-    if(!byEspCal[esp][clas]) byEspCal[esp][clas]={kg:0,sumPV:0,comF:0,comP:0,neto:0,cfija:r.cfija,cpct:r.cpct};
-    var d=byEspCal[esp][clas];
+    if(!byEspCal[esp][clave]) byEspCal[esp][clave]={kg:0,sumPV:0,comF:0,comP:0,neto:0,cfija:r.cfija,cpct:r.cpct,clas:clas};
+    var d=byEspCal[esp][clave];
     d.kg+=r.kilos;
     d.sumPV+=r.pventa*r.kilos;
     d.comF+=r.comF;
@@ -1598,9 +1642,11 @@ function pfF1Individual(id){
     var espKg=0,espNeto=0;
     filas+='<tr style="background:#f0f7ec"><td colspan="6" style="padding:6px 8px;font-weight:700;font-size:12px;color:#1a3d1a">🌿 '+esp+'</td></tr>';
 
-    ORDEN.forEach(function(clas){
-      if(!clasMap[clas]) return;
-      var d=clasMap[clas];
+    var claves=Object.keys(clasMap).sort(function(a,b){
+      return ORDEN.indexOf(clasMap[a].clas)-ORDEN.indexOf(clasMap[b].clas);
+    });
+    claves.forEach(function(clave){
+      var d=clasMap[clave];
       var ppVenta=d.kg>0?Math.round(d.sumPV/d.kg):0;
       var ventaNeta=Math.round(d.sumPV);
       var comF=Math.round(d.comF);
@@ -1609,7 +1655,7 @@ function pfF1Individual(id){
       espKg+=d.kg; espNeto+=neto;
       totalKg+=d.kg; totalNeto+=neto; totalComF+=comF; totalComP+=comP;
       filas+='<tr style="border-bottom:1px solid #eee">'+
-        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+clas+'</td>'+
+        '<td style="padding:7px 8px;padding-left:18px;color:#555">'+d.clas+'</td>'+
         '<td style="padding:7px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
         '<td style="padding:7px 6px;text-align:right">$'+ppVenta.toLocaleString('es-CL')+'/kg</td>'+
         '<td style="padding:7px 6px;font-size:10px;color:#555">'+
@@ -1620,8 +1666,8 @@ function pfF1Individual(id){
       '</tr>';
     });
 
-    // Subtotal especie si hay más de una clasificación
-    var clasCount=ORDEN.filter(function(c){return clasMap[c];}).length;
+    // Subtotal especie si hay más de una fila
+    var clasCount=claves.length;
     if(clasCount>1){
       filas+='<tr style="background:#eaf3de;font-style:italic">'+
         '<td style="padding:7px 8px;font-weight:600">Subtotal '+esp+'</td>'+
@@ -2317,6 +2363,163 @@ function adjGuardar(){
   closeEdit('modal-adj');
   if(tipo==='f1'){renderF1Lista();}else{renderF2Lista();}
   if(ge('scr-rep').classList.contains('on'))genRep();
+}
+
+/* ══ GENERADOR PROFORMA POR ESPECIE ══ */
+function pfgInit(){
+  // Poblar proveedores con LDV emitidas
+  var provs=new Set();
+  f1.filter(function(x){return x.liqNum;}).forEach(function(x){if(x.proveedor)provs.add(x.proveedor);});
+  var selP=ge('pfg-prov');
+  while(selP.options.length>1){selP.remove(1);}
+  Array.from(provs).sort().forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p;selP.appendChild(o);});
+  ge('pfg-preview').style.display='none';
+  ge('pfg-empty').style.display='none';
+}
+
+function pfgActualizar(){
+  var prov=ge('pfg-prov').value;
+  var esp=ge('pfg-esp').value;
+
+  // Actualizar especies según proveedor seleccionado
+  var selE=ge('pfg-esp');
+  var espActual=selE.value;
+  if(prov){
+    var esps=new Set();
+    f1.filter(function(x){return x.liqNum&&x.proveedor===prov;}).forEach(function(x){if(x.fruta)esps.add(x.fruta);});
+    while(selE.options.length>1){selE.remove(1);}
+    Array.from(esps).sort().forEach(function(e){var o=document.createElement('option');o.value=e;o.textContent=e;selE.appendChild(o);});
+    if(espActual){selE.value=espActual;}
+    esp=selE.value;
+  }
+
+  if(!prov||!esp){ge('pfg-preview').style.display='none';ge('pfg-empty').style.display='none';return;}
+
+  // Filtrar registros con LDV emitida, ese proveedor y especie
+  var regs=f1.filter(function(x){return x.liqNum&&x.proveedor===prov&&x.fruta===esp;});
+  if(!regs.length){ge('pfg-preview').style.display='none';ge('pfg-empty').style.display='block';return;}
+  ge('pfg-empty').style.display='none';ge('pfg-preview').style.display='block';
+
+  // Agrupar por LDV
+  var byLdv={};
+  regs.forEach(function(x){
+    var k=x.liqNum;
+    if(!byLdv[k]){byLdv[k]={liqNum:x.liqNum,liqFecha:x.liqFecha||x.fecha,guias:new Set(),kg:0,neto:0,ivaAmt:0,total:0,calibres:[]};}
+    byLdv[k].guias.add(x.guia);
+    byLdv[k].kg+=x.kilos;
+    byLdv[k].neto+=x.neto;
+    byLdv[k].ivaAmt+=x.ivaAmt;
+    byLdv[k].total+=x.total;
+    if(x.calibre&&byLdv[k].calibres.indexOf(x.calibre)===-1)byLdv[k].calibres.push(x.calibre);
+  });
+
+  var totalKg=0,totalNeto=0,totalIva=0,totalTotal=0;
+  var listaHtml='<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    '<thead><tr style="background:var(--g1);color:#fff">'+
+      '<th style="padding:7px 6px">N° LDV</th>'+
+      '<th style="padding:7px 6px">Guías</th>'+
+      '<th style="padding:7px 6px">Calibre</th>'+
+      '<th style="padding:7px 6px;text-align:right">Kilos</th>'+
+      '<th style="padding:7px 6px;text-align:right">Comisión neta</th>'+
+      '<th style="padding:7px 6px;text-align:right">IVA</th>'+
+      '<th style="padding:7px 6px;text-align:right">Total c/IVA</th>'+
+    '</tr></thead><tbody>';
+
+  Object.values(byLdv).forEach(function(d){
+    totalKg+=d.kg;totalNeto+=d.neto;totalIva+=d.ivaAmt;totalTotal+=d.total;
+    listaHtml+='<tr style="border-bottom:1px solid var(--bd)">'+
+      '<td style="padding:7px 6px;font-weight:700;color:var(--g1)">'+d.liqNum+'</td>'+
+      '<td style="padding:7px 6px">'+Array.from(d.guias).join(', ')+'</td>'+
+      '<td style="padding:7px 6px">'+d.calibres.join(', ')+'</td>'+
+      '<td style="padding:7px 6px;text-align:right">'+Math.round(d.kg).toLocaleString('es-CL')+' kg</td>'+
+      '<td style="padding:7px 6px;text-align:right">$'+Math.round(d.neto).toLocaleString('es-CL')+'</td>'+
+      '<td style="padding:7px 6px;text-align:right">$'+Math.round(d.ivaAmt).toLocaleString('es-CL')+'</td>'+
+      '<td style="padding:7px 6px;text-align:right;font-weight:700;color:var(--g1)">$'+Math.round(d.total).toLocaleString('es-CL')+'</td>'+
+    '</tr>';
+  });
+  listaHtml+='<tr style="background:var(--gl);font-weight:700">'+
+    '<td colspan="3" style="padding:8px 6px">TOTAL — '+esp+'</td>'+
+    '<td style="padding:8px 6px;text-align:right">'+Math.round(totalKg).toLocaleString('es-CL')+' kg</td>'+
+    '<td style="padding:8px 6px;text-align:right">$'+Math.round(totalNeto).toLocaleString('es-CL')+'</td>'+
+    '<td style="padding:8px 6px;text-align:right">$'+Math.round(totalIva).toLocaleString('es-CL')+'</td>'+
+    '<td style="padding:8px 6px;text-align:right;color:var(--g1);font-size:13px">$'+Math.round(totalTotal).toLocaleString('es-CL')+'</td>'+
+  '</tr></tbody></table>';
+
+  ge('pfg-ldv-lista').innerHTML=listaHtml;
+  ge('pfg-totales').innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+
+      '<div style="text-align:center"><div style="font-size:10px;color:var(--tx3)">Comisión neta</div><div style="font-size:16px;font-weight:700;color:var(--g1)">$'+Math.round(totalNeto).toLocaleString('es-CL')+'</div></div>'+
+      '<div style="text-align:center"><div style="font-size:10px;color:var(--tx3)">IVA 19%</div><div style="font-size:16px;font-weight:700;color:var(--g1)">$'+Math.round(totalIva).toLocaleString('es-CL')+'</div></div>'+
+      '<div style="text-align:center"><div style="font-size:10px;color:var(--tx3)">Total a facturar</div><div style="font-size:18px;font-weight:800;color:var(--g1)">$'+Math.round(totalTotal).toLocaleString('es-CL')+'</div></div>'+
+    '</div>';
+
+  // Guardar datos para generar proforma
+  window._pfgData={prov:prov,esp:esp,byLdv:byLdv,totalKg:totalKg,totalNeto:totalNeto,totalIva:totalIva,totalTotal:totalTotal};
+}
+
+function pfgGenerar(){
+  var d=window._pfgData;if(!d){return;}
+  var iva=f1.filter(function(x){return x.liqNum&&x.proveedor===d.prov&&x.fruta===d.esp;})[0].iva||19;
+
+  var filas=Object.values(d.byLdv).map(function(ldv,i){
+    return '<tr style="border-bottom:1px solid #eee">'+
+      '<td style="padding:8px 6px;font-weight:700;color:#1a3d1a">'+(i+1)+'</td>'+
+      '<td style="padding:8px 6px;font-weight:700">'+ldv.liqNum+'</td>'+
+      '<td style="padding:8px 6px">'+Array.from(ldv.guias).join(', ')+'</td>'+
+      '<td style="padding:8px 6px">'+(ldv.calibres.join(', ')||'—')+'</td>'+
+      '<td style="padding:8px 6px;text-align:right">'+Math.round(ldv.kg).toLocaleString('es-CL')+' kg</td>'+
+      '<td style="padding:8px 6px;text-align:right">$'+Math.round(ldv.neto).toLocaleString('es-CL')+'</td>'+
+      '<td style="padding:8px 6px;text-align:right">$'+Math.round(ldv.ivaAmt).toLocaleString('es-CL')+'</td>'+
+      '<td style="padding:8px 6px;text-align:right;font-weight:700;color:#1a3d1a">$'+Math.round(ldv.total).toLocaleString('es-CL')+'</td>'+
+    '</tr>';
+  }).join('');
+
+  var html=logoHdr()+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">'+
+      '<div>'+
+        '<div style="font-size:20px;font-weight:800;color:#1a3d1a">PROFORMA DE SERVICIOS DE COMERCIALIZACIÓN</div>'+
+        '<div style="font-size:11px;color:#666;margin-top:3px">Emisión: '+hoy()+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">'+
+      '<div><div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Destinatario</div>'+
+      '<div style="font-size:16px;font-weight:800">'+d.prov+'</div></div>'+
+      '<div style="text-align:right"><div style="font-size:10px;opacity:.7">Especie</div>'+
+      '<div style="font-size:16px;font-weight:700">'+d.esp+'</div></div>'+
+    '</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">'+
+      '<thead><tr style="background:#1a3d1a;color:#fff">'+
+        '<th style="padding:8px 5px">N</th>'+
+        '<th style="padding:8px 5px">N° LDV</th>'+
+        '<th style="padding:8px 5px">Guías</th>'+
+        '<th style="padding:8px 5px">Calibre</th>'+
+        '<th style="padding:8px 5px;text-align:right">Kilos</th>'+
+        '<th style="padding:8px 5px;text-align:right">Com. neta</th>'+
+        '<th style="padding:8px 5px;text-align:right">IVA '+iva+'%</th>'+
+        '<th style="padding:8px 5px;text-align:right">Total c/IVA</th>'+
+      '</tr></thead>'+
+      '<tbody>'+filas+'</tbody>'+
+      '<tfoot><tr style="background:#f0f7ec;font-weight:700">'+
+        '<td colspan="4" style="padding:9px 5px">TOTALES — '+d.esp+'</td>'+
+        '<td style="padding:9px 5px;text-align:right">'+Math.round(d.totalKg).toLocaleString('es-CL')+' kg</td>'+
+        '<td style="padding:9px 5px;text-align:right">$'+Math.round(d.totalNeto).toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:9px 5px;text-align:right">$'+Math.round(d.totalIva).toLocaleString('es-CL')+'</td>'+
+        '<td style="padding:9px 5px;text-align:right;color:#1a3d1a;font-size:14px">$'+Math.round(d.totalTotal).toLocaleString('es-CL')+'</td>'+
+      '</tr></tfoot>'+
+    '</table>'+
+    '<div style="background:#1a3d1a;color:#fff;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<div>'+
+        '<div style="font-size:12px;opacity:.85">TOTAL A FACTURAR — SERVICIOS DE COMERCIALIZACIÓN ('+d.esp+')</div>'+
+        '<div style="font-size:10px;opacity:.6">Comisión neta $'+Math.round(d.totalNeto).toLocaleString('es-CL')+' + IVA $'+Math.round(d.totalIva).toLocaleString('es-CL')+'</div>'+
+      '</div>'+
+      '<div style="font-size:28px;font-weight:900">$'+Math.round(d.totalTotal).toLocaleString('es-CL')+'</div>'+
+    '</div>'+
+    bancoHtml()+
+    '<div style="font-size:10px;color:#aaa;margin-top:14px;border-top:1px solid #eee;padding-top:8px">Proforma sin validez tributaria. Generado '+hoy()+'</div>';
+
+  ge('pf-tit').textContent='Proforma '+d.esp+' — '+d.prov;
+  ge('pf-in').innerHTML='<div style="font-family:-apple-system,Arial,sans-serif;font-size:13px;color:#111;background:#fff;padding:24px;border-radius:12px">'+html+'</div>';
+  ge('m-pf').classList.add('on');
 }
 
 /* ══ CONFIG ══ */
