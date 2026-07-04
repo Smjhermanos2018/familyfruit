@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orden de Compra — FamilyFruit</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #f0ede4; --card: #e8e4d8; --card2: #ddd9cc;
+  --green: #2d5a27; --green-hover: #3d7a35;
+  --text: #1a2e18; --muted: #5a6b57; --border: #c8c3b0;
+  --radius: 10px; --red: #c0392b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); font-family: 'Segoe UI', sans-serif; color: var(--text); min-height: 100vh; }
+.app-header { background: var(--green); color: #fff; padding: 14px 24px; display:flex; justify-content:space-between; align-items:center; }
+.app-header .logo { font-size: 20px; font-weight: 700; }
+.app-header .sub { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+.btn-back { background:rgba(255,255,255,0.15); color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; font-family:inherit; }
+.btn-back:hover { background:rgba(255,255,255,0.25); }
+.main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+.card { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 20px; margin-bottom: 16px; }
+.folio-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.doc-title-input { font-size: 17px; font-weight: 700; color: var(--text); background: transparent; border: none; outline: none; border-bottom: 1.5px dashed var(--border); min-width: 220px; font-family: inherit; }
+.folio-badge { display: flex; align-items: center; gap: 6px; background: var(--green); color: #fff; border-radius: var(--radius); padding: 6px 14px; }
+.folio-badge span { font-size: 12px; opacity: 0.85; }
+.folio-badge input { font-size: 14px; font-weight: 700; color: #fff; background: transparent; border: none; outline: none; width: 52px; text-align: center; font-family: inherit; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 5px; }
+input[type=text], input[type=date], textarea, select {
+  width: 100%; background: #fff; border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--text);
+  outline: none; font-family: inherit;
+}
+input[type=text]:focus, input[type=date]:focus, textarea:focus, select:focus { border-color: var(--green); }
+.prov-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
+.prov-btn { background: var(--card2); border: 0.5px solid var(--border); border-radius: 8px; padding: 5px 13px; font-size: 12px; cursor: pointer; color: var(--text); font-family: inherit; }
+.prov-btn.active { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+.section-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th { font-size: 11px; font-weight: 700; color: var(--muted); text-align: left; padding: 7px 6px; border-bottom: 1.5px solid var(--border); text-transform: uppercase; }
+td { padding: 5px 4px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+td select, td input[type=number] { background: #fff; border: 0.5px solid var(--border); border-radius: 6px; padding: 5px 6px; font-size: 12px; color: var(--text); width: 100%; font-family: inherit; outline: none; }
+.subtotal-cell { font-size: 12px; font-weight: 600; color: var(--muted); text-align: right; white-space: nowrap; }
+.del-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 2px 5px; border-radius: 5px; }
+.del-btn:hover { color: var(--red); }
+.btn-add { width: 100%; background: var(--card2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 9px; font-size: 13px; cursor: pointer; color: var(--text); font-family: inherit; margin-top: 8px; }
+.totals-wrap { display: flex; justify-content: flex-end; }
+.totals-box { width: 280px; }
+.t-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; border-bottom: 0.5px solid var(--border); }
+.t-row .lbl { color: var(--muted); }
+.t-row .val { font-weight: 600; }
+.t-grand { display: flex; justify-content: space-between; align-items: center; background: var(--green); color: #fff; border-radius: var(--radius); padding: 12px 16px; margin-top: 10px; font-size: 16px; font-weight: 700; }
+.iva-input { background: transparent; border: none; outline: none; border-bottom: 1px dashed var(--border); width: 30px; text-align: center; font-size: 14px; color: var(--muted); font-family: inherit; }
+.obs-ta { min-height: 54px; resize: vertical; }
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.btn-wsp { background: #25D366; color: #fff; border: none; border-radius: var(--radius); padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-pdf { background: var(--green); color: #fff; border: none; border-radius: var(--radius); padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.historial-list { display: flex; flex-direction: column; gap: 8px; }
+.hist-item { background: #fff; border: 0.5px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.hist-item .hi-left { display: flex; flex-direction: column; gap: 2px; }
+.hist-item .hi-folio { font-weight: 700; color: var(--green); font-size: 13px; }
+.hist-item .hi-prov { color: var(--muted); font-size: 12px; }
+.hist-item .hi-total { font-weight: 700; font-size: 14px; }
+.hist-item .hi-right { display: flex; gap: 6px; align-items: center; }
+.btn-del-hist { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 3px 7px; border-radius: 5px; }
+.btn-act-hist { background: var(--card2); border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 9px; font-size: 12px; cursor: pointer; color: var(--text); font-family: inherit; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--bg); border-radius: var(--radius); padding: 24px; max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--green); }
+.modal pre { background: #fff; border: 0.5px solid var(--border); border-radius: 8px; padding: 14px; font-size: 12px; line-height: 1.7; white-space: pre-wrap; color: var(--text); font-family: 'Courier New', monospace; }
+.modal-btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.modal-btns button { flex: 1; min-width: 120px; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+.btn-modal-wsp { background: #25D366; color: #fff; }
+.btn-modal-pdf { background: var(--green); color: #fff; }
+.btn-modal-close { background: var(--card2); color: var(--text); }
+.sync-bar { background: #e8f5e8; border: 1px solid #b8d98b; border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #2d6a11; margin-bottom: 12px; display:none; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <div class="logo">🍓 FamilyFruit</div>
+    <div class="sub">ÓRDENES DE COMPRA</div>
+  </div>
+  <button class="btn-back" onclick="window.location.href='index.html'">← Volver al ERP</button>
+</div>
+
+<div class="main">
+  <div class="sync-bar" id="sync-bar"></div>
+
+  <div class="card">
+    <div class="folio-row">
+      <input class="doc-title-input" id="doc-title" value="Orden de Compra — Frutas">
+      <div class="folio-badge">
+        <span>Folio #</span>
+        <input id="folio-input" type="text" value="001">
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom:14px">
+      <div>
+        <label>Proveedor</label>
+        <div class="prov-btns">
+          <button class="prov-btn" onclick="selectProv(this,'Propal')">Propal</button>
+          <button class="prov-btn" onclick="selectProv(this,'Ag. Ciénago')">Ag. Ciénago</button>
+          <button class="prov-btn" onclick="selectProv(this,'Otros')">Otros</button>
+        </div>
+        <input type="text" id="prov-input" placeholder="Escribe o edita el proveedor..." oninput="provChanged()">
+      </div>
+      <div>
+        <label>Fecha</label>
+        <input type="date" id="fecha">
+      </div>
+    </div>
+
+    <div class="section-title">Productos</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:24%">Fruta</th>
+            <th style="width:20%">Calibre</th>
+            <th style="width:13%">Kilos</th>
+            <th style="width:17%">Precio neto/kg</th>
+            <th style="width:17%">Subtotal</th>
+            <th style="width:9%"></th>
+          </tr>
+        </thead>
+        <tbody id="items-body"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addRow()">+ Agregar producto</button>
+
+    <div style="margin-top:16px">
+      <label>Observaciones</label>
+      <textarea class="obs-ta" id="obs" placeholder="Condiciones de pago, entrega, notas..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="totals-wrap">
+      <div class="totals-box">
+        <div class="t-row"><span class="lbl">Neto</span><span class="val" id="t-neto">$0</span></div>
+        <div class="t-row">
+          <span class="lbl">IVA (<input class="iva-input" id="iva-pct" type="number" min="0" max="100" value="19" oninput="calcTotals()">%)</span>
+          <span class="val" id="t-iva">$0</span>
+        </div>
+        <div class="t-grand"><span>Total a pagar</span><span id="t-total">$0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-wsp" onclick="enviarWhatsApp()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Enviar por WhatsApp
+    </button>
+    <button class="btn-pdf" onclick="generarPDF()">📄 Guardar PDF</button>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="section-title" style="margin-bottom:12px">Historial de órdenes</div>
+    <div class="historial-list" id="hist-list"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <pre id="modal-body"></pre>
+    <div class="modal-btns">
+      <button class="btn-modal-wsp" onclick="wspDesdeModal()">📲 WhatsApp</button>
+      <button class="btn-modal-pdf" onclick="pdfDesdeModal()">📄 PDF</button>
+      <button class="btn-modal-close" onclick="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://ruujgblgrxdkktgctppv.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const FRUTAS = ['Clementina','Naranja','Mandarina','Limón','Cereza','Manzana','Pera','Uva','Durazno','Nectarín','Ciruela','Frutilla','Arándano','Kiwi','Sandía','Melón','Mango','Piña','Banana','Damasco','Frambuesa','Mora','Lúcuma','Chirimoya','Otro'];
+const CALIBRES = ['Comercial','Granulada','Chico','Precalibre','Sin cera','Verde'];
+
+let rows = [];
+let modalData = { texto: '', folio: '' };
+let historial = [];
+
+function showSync(msg, ok=true) {
+  const el = document.getElementById('sync-bar');
+  el.style.display = 'block';
+  el.style.background = ok ? '#e8f5e8' : '#fdf0f0';
+  el.style.color = ok ? '#2d6a11' : '#c0392b';
+  el.style.borderColor = ok ? '#b8d98b' : '#f7c1c1';
+  el.textContent = msg;
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ── FOLIO ──
+function getFolioLocal() { return parseInt(localStorage.getItem('oc_folio') || '1'); }
+function saveFolioLocal(n) { localStorage.setItem('oc_folio', n); }
+function initFolio() { document.getElementById('folio-input').value = String(getFolioLocal()).padStart(3,'0'); }
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('es-CL'); }
+
+function selectProv(btn, nombre) {
+  document.querySelectorAll('.prov-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('prov-input').value = nombre;
+}
+function provChanged() { document.querySelectorAll('.prov-btn').forEach(b => b.classList.remove('active')); }
+
+function addRow() { rows.push({ id: Date.now(), fruta: '', calibre: '', kilos: '', precio: '' }); renderRows(); }
+function removeRow(id) { rows = rows.filter(r => r.id !== id); renderRows(); }
+
+function renderRows() {
+  document.getElementById('items-body').innerHTML = rows.map(r => `
+    <tr>
+      <td><select onchange="updateRow(${r.id},'fruta',this.value)">
+        <option value="">Seleccionar...</option>
+        ${FRUTAS.map(f => `<option value="${f}"${r.fruta===f?' selected':''}>${f}</option>`).join('')}
+      </select></td>
+      <td><select onchange="updateRow(${r.id},'calibre',this.value)">
+        <option value="">— calibre —</option>
+        ${CALIBRES.map(c => `<option value="${c}"${r.calibre===c?' selected':''}>${c}</option>`).join('')}
+      </select></td>
+      <td><input type="number" min="0" step="0.1" placeholder="0" value="${r.kilos}" oninput="updateRow(${r.id},'kilos',this.value)"></td>
+      <td><input type="number" min="0" step="1" placeholder="0" value="${r.precio}" oninput="updateRow(${r.id},'precio',this.value)"></td>
+      <td class="subtotal-cell" id="sub-${r.id}">${calcSub(r)}</td>
+      <td><button class="del-btn" onclick="removeRow(${r.id})">✕</button></td>
+    </tr>
+  `).join('');
+  calcTotals();
+}
+
+function updateRow(id, field, val) {
+  const r = rows.find(x => x.id === id);
+  if (r) r[field] = val;
+  const el = document.getElementById('sub-' + id);
+  if (el) el.textContent = calcSub(r);
+  calcTotals();
+}
+
+function calcSub(r) {
+  const k = parseFloat(r.kilos)||0, p = parseFloat(r.precio)||0;
+  return k && p ? fmt(k * p) : '-';
+}
+
+function calcTotals() {
+  const neto = rows.reduce((s,r) => s + (parseFloat(r.kilos)||0)*(parseFloat(r.precio)||0), 0);
+  const ivaPct = (parseFloat(document.getElementById('iva-pct').value)||0) / 100;
+  document.getElementById('t-neto').textContent = fmt(neto);
+  document.getElementById('t-iva').textContent = fmt(neto * ivaPct);
+  document.getElementById('t-total').textContent = fmt(neto * (1 + ivaPct));
+}
+
+function getDatos() {
+  const prov = document.getElementById('prov-input').value.trim();
+  const fecha = document.getElementById('fecha').value || new Date().toLocaleDateString('es-CL');
+  const titulo = document.getElementById('doc-title').value;
+  const obs = document.getElementById('obs').value;
+  const folioStr = document.getElementById('folio-input').value;
+  const neto = rows.reduce((s,r) => s + (parseFloat(r.kilos)||0)*(parseFloat(r.precio)||0), 0);
+  const ivaPct = (parseFloat(document.getElementById('iva-pct').value)||0) / 100;
+  const productos = rows.filter(r => r.fruta);
+  return { prov, fecha, titulo, obs, folioStr, neto, ivaPct, productos };
+}
+
+function generarTexto(d) {
+  const sep = '─'.repeat(38);
+  const detalle = d.productos.map(r => {
+    const cal = r.calibre ? ` [${r.calibre}]` : '';
+    return `  • ${r.fruta}${cal}: ${r.kilos} kg x ${fmt(parseFloat(r.precio)||0)}/kg = ${calcSub(r)}`;
+  }).join('\n');
+  let txt = `${d.titulo}\n`;
+  txt += `Folio: #${d.folioStr}  |  Fecha: ${d.fecha}\n`;
+  txt += `Proveedor: ${d.prov}\n`;
+  txt += sep + '\n';
+  txt += detalle + '\n';
+  txt += sep + '\n';
+  txt += `Neto:          ${fmt(d.neto)}\n`;
+  txt += `IVA (${Math.round(d.ivaPct*100)}%):       ${fmt(d.neto * d.ivaPct)}\n`;
+  txt += `TOTAL A PAGAR: ${fmt(d.neto * (1 + d.ivaPct))}\n`;
+  if (d.obs) txt += `\nObs: ${d.obs}`;
+  return txt;
+}
+
+function validar() {
+  if (!document.getElementById('prov-input').value.trim()) { alert('Selecciona o escribe un proveedor'); return false; }
+  if (!rows.some(r => r.fruta)) { alert('Agrega al menos un producto'); return false; }
+  return true;
+}
+
+function avanzarFolio() {
+  const next = getFolioLocal() + 1;
+  saveFolioLocal(next);
+  document.getElementById('folio-input').value = String(next).padStart(3,'0');
+}
+
+// ── SUPABASE: guardar OC ──
+async function guardarEnSupabase(d) {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const rec = {
+    id: Date.now(),
+    folio: d.folioStr,
+    fecha: d.fecha,
+    proveedor: d.prov,
+    items: d.productos,
+    subtotal: Math.round(d.neto),
+    iva: Math.round(d.neto * d.ivaPct),
+    total: Math.round(d.neto * (1 + d.ivaPct)),
+    texto: generarTexto(d),
+    titulo: d.titulo,
+    obs: d.obs
+  };
+  const { error } = await sb.from('ordenes_compra').insert(rec);
+  if (error) { showSync('⚠️ Error guardando en nube: ' + error.message, false); }
+  else { showSync('☁ OC guardada en Supabase ✓'); }
+}
+
+// ── SUPABASE: cargar historial ──
+async function cargarHistorial() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { cargarHistorialLocal(); return; }
+  const { data, error } = await sb
+    .from('ordenes_compra')
+    .select('*')
+    .order('id', { ascending: false })
+    .limit(50);
+  if (error || !data) { cargarHistorialLocal(); return; }
+  historial = data.map(r => ({
+    folio: r.folio,
+    prov: r.proveedor,
+    fecha: r.fecha,
+    total: fmt(r.total),
+    texto: r.texto,
+    sb_id: r.id,
+    datos: { folioStr: r.folio, prov: r.proveedor, fecha: r.fecha, titulo: r.titulo, obs: r.obs, productos: r.items, neto: r.subtotal, ivaPct: r.iva/r.subtotal }
+  }));
+  renderHistorial();
+}
+
+function cargarHistorialLocal() {
+  try { historial = JSON.parse(localStorage.getItem('oc_hist') || '[]'); } catch(e) { historial = []; }
+  renderHistorial();
+}
+
+// ── SUPABASE: eliminar OC ──
+async function eliminarOrden(i) {
+  const h = historial[i];
+  if (!confirm('¿Eliminar esta orden?')) return;
+  if (h.sb_id) {
+    await sb.from('ordenes_compra').delete().eq('id', h.sb_id);
+  }
+  historial.splice(i, 1);
+  renderHistorial();
+}
+
+// ── PDF ──
+function crearPDF(d) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const verde = [45, 90, 39], beige = [240, 237, 228], textOsc = [26, 46, 24], gris = [90, 107, 87];
+  const W = 210, pad = 18;
+  doc.setFillColor(...verde); doc.rect(0, 0, W, 28, 'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text('FamilyFruit', pad, 12); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('ORDENES DE COMPRA', pad, 19);
+  doc.setFillColor(255,255,255); doc.roundedRect(W-60,6,42,14,3,3,'F');
+  doc.setTextColor(...verde); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text(`Folio #${d.folioStr}`, W-39, 15, { align: 'center' });
+  let y = 36;
+  doc.setTextColor(...textOsc); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text(d.titulo, pad, y); y += 8;
+  doc.setFillColor(...beige); doc.roundedRect(pad-2,y-5,W-(pad*2)+4,16,2,2,'F');
+  doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...gris);
+  doc.text('PROVEEDOR', pad+2, y+2); doc.text('FECHA', W/2+4, y+2);
+  doc.setFont('helvetica','normal'); doc.setTextColor(...textOsc); doc.setFontSize(11);
+  doc.text(d.prov, pad+2, y+8); doc.text(d.fecha, W/2+4, y+8); y += 22;
+  doc.setFillColor(...verde); doc.rect(pad-2,y-5,W-(pad*2)+4,9,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  const cols = [pad,68,100,130,162];
+  ['FRUTA / CALIBRE','KILOS','PRECIO NETO/KG','SUBTOTAL'].forEach((h,i) => doc.text(h, cols[i], y));
+  y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  d.productos.forEach((r,idx) => {
+    doc.setFillColor(idx%2===0?255:245,idx%2===0?255:243,idx%2===0?255:236);
+    doc.rect(pad-2,y-4,W-(pad*2)+4,8,'F');
+    doc.setTextColor(...textOsc);
+    const cal = r.calibre ? ` [${r.calibre}]` : '';
+    doc.text(`${r.fruta}${cal}`, cols[0], y);
+    doc.text(`${r.kilos} kg`, cols[1], y);
+    doc.text(fmt(parseFloat(r.precio)||0), cols[2], y);
+    doc.text(calcSub(r), cols[3], y);
+    y += 8;
+  });
+  y += 4;
+  doc.setDrawColor(...verde); doc.setLineWidth(0.5); doc.line(pad,y,W-pad,y); y += 6;
+  const xLbl = 130, xVal = W-pad;
+  doc.setFontSize(10); doc.setTextColor(...gris);
+  doc.text('Neto:', xLbl, y); doc.setTextColor(...textOsc); doc.setFont('helvetica','bold');
+  doc.text(fmt(d.neto), xVal, y, { align:'right' }); y += 7;
+  doc.setFont('helvetica','normal'); doc.setTextColor(...gris);
+  doc.text(`IVA (${Math.round(d.ivaPct*100)}%):`, xLbl, y); doc.setTextColor(...textOsc); doc.setFont('helvetica','bold');
+  doc.text(fmt(d.neto*d.ivaPct), xVal, y, { align:'right' }); y += 4;
+  doc.setFillColor(...verde); doc.roundedRect(xLbl-4,y,xVal-xLbl+8,12,2,2,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('TOTAL A PAGAR:', xLbl, y+8);
+  doc.text(fmt(d.neto*(1+d.ivaPct)), xVal, y+8, { align:'right' }); y += 18;
+  if (d.obs) {
+    doc.setFillColor(...beige); doc.roundedRect(pad-2,y-4,W-(pad*2)+4,14,2,2,'F');
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...gris);
+    doc.text('OBSERVACIONES:', pad+2, y+2);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...textOsc); doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(d.obs, W-(pad*2)-4), pad+2, y+8);
+  }
+  return doc;
+}
+
+function generarPDF() {
+  if (!validar()) return;
+  const d = getDatos();
+  crearPDF(d).save(`OC_${d.folioStr}_${d.prov.replace(/[^a-zA-Z0-9]/g,'_')}_${d.fecha}.pdf`);
+  guardarHistorial(d);
+  avanzarFolio();
+}
+
+function enviarWhatsApp() {
+  if (!validar()) return;
+  const d = getDatos();
+  guardarHistorial(d);
+  avanzarFolio();
+  window.open('https://wa.me/?text=' + encodeURIComponent(generarTexto(d)), '_blank');
+}
+
+async function guardarHistorial(d) {
+  await guardarEnSupabase(d);
+  await cargarHistorial();
+}
+
+function renderHistorial() {
+  const el = document.getElementById('hist-list');
+  if (!historial.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Sin órdenes guardadas</div>'; return; }
+  el.innerHTML = historial.map((h, i) => `
+    <div class="hist-item">
+      <div class="hi-left">
+        <span class="hi-folio">Folio #${h.folio}</span>
+        <span class="hi-prov">${h.prov} · ${h.fecha}</span>
+      </div>
+      <div class="hi-right">
+        <span class="hi-total">${h.total}</span>
+        <button class="btn-act-hist" onclick="verOrden(${i})">Ver</button>
+        <button class="btn-act-hist" style="background:#e8a020;color:#fff" onclick="editarOrden(${i})">✏️</button>
+        <button class="btn-act-hist" style="background:#25D366;color:#fff" onclick="wspHistorial(${i})">📲</button>
+        <button class="btn-act-hist" style="background:var(--green);color:#fff" onclick="pdfHistorial(${i})">📄</button>
+        <button class="btn-del-hist" onclick="eliminarOrden(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function editarOrden(i) {
+  const h = historial[i];
+  if (!h.datos) { alert('No hay datos editables'); return; }
+  const d = h.datos;
+  document.getElementById('doc-title').value = d.titulo || 'Orden de Compra — Frutas';
+  document.getElementById('folio-input').value = d.folioStr;
+  document.getElementById('prov-input').value = d.prov;
+  document.getElementById('fecha').value = d.fecha;
+  document.getElementById('obs').value = d.obs || '';
+  document.getElementById('iva-pct').value = Math.round((d.ivaPct||0.19)*100);
+  document.querySelectorAll('.prov-btn').forEach(b => b.classList.toggle('active', b.textContent.trim()===d.prov));
+  rows = (d.productos||[]).map(r => ({ ...r, id: Date.now()+Math.random() }));
+  renderRows();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function verOrden(i) {
+  const h = historial[i];
+  document.getElementById('modal-title').textContent = `Folio #${h.folio} — ${h.prov}`;
+  document.getElementById('modal-body').textContent = h.texto;
+  modalData = { texto: h.texto, datos: h.datos };
+  document.getElementById('modal').classList.add('show');
+}
+
+function wspHistorial(i) { window.open('https://wa.me/?text='+encodeURIComponent(historial[i].texto),'_blank'); }
+function pdfHistorial(i) {
+  const h = historial[i];
+  if (!h.datos) { alert('PDF no disponible'); return; }
+  crearPDF(h.datos).save(`OC_${h.folio}_${h.prov.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+}
+function wspDesdeModal() { window.open('https://wa.me/?text='+encodeURIComponent(modalData.texto),'_blank'); }
+function pdfDesdeModal() {
+  if (!modalData.datos) { alert('PDF no disponible'); return; }
+  crearPDF(modalData.datos).save(`OC_${modalData.datos.folioStr}.pdf`);
+}
+function cerrarModal() { document.getElementById('modal').classList.remove('show'); }
+
+// INIT
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+initFolio();
+addRow(); addRow();
+cargarHistorial();
+</script>
+</body>
+</html>
