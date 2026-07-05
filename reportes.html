@@ -4,214 +4,205 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FamilyFruit — Reportes</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{--verde:#2d6a4f;--verde-claro:#52b788;--naranja:#f4a261;--fondo:#f8f9f4;--gris:#6b7280;--blanco:#ffffff;--sombra:0 2px 8px rgba(0,0,0,0.08);}
+:root{--verde:#2d6a4f;--naranja:#f4a261;--fondo:#f8f9f4;--gris:#6b7280;--blanco:#ffffff;--sombra:0 2px 8px rgba(0,0,0,0.08);}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI',sans-serif;background:var(--fondo);color:#1a1a1a;min-height:100vh;}
+body{font-family:'Segoe UI',sans-serif;background:var(--fondo);color:#1a1a1a;}
 header{background:var(--verde);color:white;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
-header .logo{font-size:1.2rem;font-weight:800;}
-header .logo span{color:var(--naranja);}
-.btn-back{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer;text-decoration:none;}
-.container{padding:20px;max-width:900px;margin:0 auto;}
-.filtros{background:var(--blanco);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--sombra);display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;}
-.filtros label{font-size:11px;font-weight:600;color:var(--gris);display:block;margin-bottom:4px;}
-.filtros input,.filtros select{width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;background:white;color:#1a1a1a;}
-.btn-primary{padding:10px 20px;background:var(--verde);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.logo{font-size:1.1rem;font-weight:800;}
+.logo span{color:var(--naranja);}
+.btn-back{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;text-decoration:none;}
+.wrap{padding:20px;max-width:1000px;margin:0 auto;}
+.filtros{background:var(--blanco);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--sombra);}
+.filtros-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px;}
+.filtros label{font-size:11px;font-weight:600;color:var(--gris);display:block;margin-bottom:3px;}
+.filtros input,.filtros select{width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:white;color:#1a1a1a;}
+.btn-buscar{padding:10px 24px;background:var(--verde);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
 .btn-excel{padding:10px 20px;background:#217346;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
-.resumen{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.acciones{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+.resumen{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
 .stat{background:var(--blanco);border-radius:12px;padding:14px;box-shadow:var(--sombra);text-align:center;}
-.stat-val{font-size:22px;font-weight:700;color:var(--verde);}
-.stat-lbl{font-size:11px;color:var(--gris);margin-top:2px;}
+.stat-val{font-size:20px;font-weight:700;color:var(--verde);}
+.stat-lbl{font-size:10px;color:var(--gris);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;}
 .card{background:var(--blanco);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--sombra);}
-.card-title{font-size:12px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.card-title{font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
-th{background:#f3f4f6;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;}
-td{padding:9px 10px;border-bottom:1px solid #f3f4f6;}
+th{background:#f3f4f6;padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;}
+td{padding:8px 10px;border-bottom:1px solid #f3f4f6;}
 tr:hover td{background:#f9fafb;}
-.acciones{display:flex;gap:8px;margin-bottom:16px;}
-canvas{max-height:300px;}
-#loading{text-align:center;padding:40px;color:var(--gris);}
+canvas{max-height:280px;}
+#msg{text-align:center;padding:30px;color:var(--gris);display:none;}
+#resultados{display:none;}
+@media(max-width:600px){.resumen{grid-template-columns:1fr 1fr;}.filtros-grid{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">Family<span>Fruit</span> — Reportes</div>
+  <div class="logo">Family<span>Fruit</span> · Reportes</div>
   <a href="index.html" class="btn-back">← Volver</a>
 </header>
-
-<div class="container">
+<div class="wrap">
   <div class="filtros">
-    <div>
-      <label>Desde</label>
-      <input type="date" id="fDesde">
+    <div class="filtros-grid">
+      <div><label>Desde</label><input type="date" id="fDesde"></div>
+      <div><label>Hasta</label><input type="date" id="fHasta"></div>
+      <div><label>Tipo</label>
+        <select id="fTipo">
+          <option value="">F1 y F2</option>
+          <option value="f1">Solo F1</option>
+          <option value="f2">Solo F2</option>
+        </select>
+      </div>
+      <div><label>Especie</label>
+        <select id="fEspecie">
+          <option value="">Todas</option>
+          <option>Clementinas</option><option>Mandarinas</option><option>Naranjas</option>
+          <option>Limón</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option><option>Yanov</option>
+        </select>
+      </div>
+      <div><label>Calibre</label>
+        <select id="fCalibre">
+          <option value="">Todos</option>
+          <option>Grande</option><option>Mediano</option><option>Chico</option><option>Pre</option><option>Sin cera</option>
+        </select>
+      </div>
+      <div><label>Proveedor/Cliente</label><input type="text" id="fCliente" placeholder="Buscar..."></div>
     </div>
-    <div>
-      <label>Hasta</label>
-      <input type="date" id="fHasta">
+    <div class="acciones">
+      <button class="btn-buscar" onclick="cargar()">🔍 Buscar</button>
+      <button class="btn-excel" onclick="exportarExcel()">📥 Excel</button>
     </div>
-    <div>
-      <label>Especie</label>
-      <select id="fEspecie">
-        <option value="">Todas</option>
-        <option>Clementinas</option>
-        <option>Mandarinas</option>
-        <option>Naranjas</option>
-        <option>Limón</option>
-        <option>Paltas</option>
-        <option>Cerezas</option>
-        <option>Uvas</option>
-        <option>Yanov</option>
-      </select>
-    </div>
-    <button class="btn-primary" onclick="cargar()">🔍 Buscar</button>
   </div>
 
-  <div id="loading" style="display:none;">Cargando datos...</div>
+  <div id="msg">Cargando...</div>
 
-  <div id="resultados" style="display:none;">
+  <div id="resultados">
     <div class="resumen">
-      <div class="stat"><div class="stat-val" id="totalKg">0</div><div class="stat-lbl">Kilos totales</div></div>
-      <div class="stat"><div class="stat-val" id="totalNeto">$0</div><div class="stat-lbl">Neto total</div></div>
-      <div class="stat"><div class="stat-val" id="totalGuias">0</div><div class="stat-lbl">Guías</div></div>
+      <div class="stat"><div class="stat-val" id="tKg">—</div><div class="stat-lbl">Kilos</div></div>
+      <div class="stat"><div class="stat-val" id="tNeto">—</div><div class="stat-lbl">Neto</div></div>
+      <div class="stat"><div class="stat-val" id="tGuias">—</div><div class="stat-lbl">Guías</div></div>
+      <div class="stat"><div class="stat-val" id="tProm">—</div><div class="stat-lbl">$/kg prom</div></div>
     </div>
 
-    <div class="acciones">
-      <button class="btn-excel" onclick="exportarExcel()">📥 Exportar Excel</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div class="card"><div class="card-title">Kilos por Calibre</div><canvas id="gCalibre"></canvas></div>
+      <div class="card"><div class="card-title">Kilos por Especie</div><canvas id="gEspecie"></canvas></div>
     </div>
-
-    <div class="card">
-      <div class="card-title">Kilos por Calibre</div>
-      <canvas id="graficoCalibres"></canvas>
-    </div>
+    <div class="card"><div class="card-title">Kilos por Fecha</div><canvas id="gFecha"></canvas></div>
 
     <div class="card">
-      <div class="card-title">Kilos por Fecha</div>
-      <canvas id="graficoFechas"></canvas>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Detalle de Ventas</div>
-      <table id="tablaDetalle">
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Guía</th>
-            <th>Especie</th>
-            <th>Calibre</th>
-            <th>Kilos</th>
-            <th>Precio</th>
-            <th>Neto</th>
-          </tr>
-        </thead>
-        <tbody id="tbodyDetalle"></tbody>
-      </table>
+      <div class="card-title">Detalle</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Guía</th><th>Cliente</th><th>Especie</th><th>Calibre</th><th>Kilos</th><th>$/kg</th><th>Neto</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-const SB_URL = 'https://ruujgblgrxdkktgctppv.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const SB_URL='https://ruujgblgrxdkktgctppv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const fm=n=>Math.round(n).toLocaleString('es-CL');
+let datos=[], graficos={};
 
-// Set default dates: last 30 days
-const hoy = new Date();
-const hace30 = new Date(hoy); hace30.setDate(hoy.getDate() - 30);
-document.getElementById('fDesde').value = hace30.toISOString().slice(0,10);
-document.getElementById('fHasta').value = hoy.toISOString().slice(0,10);
+// Defaults
+const hoy=new Date(), hace30=new Date(hoy);
+hace30.setDate(hoy.getDate()-30);
+document.getElementById('fDesde').value=hace30.toISOString().slice(0,10);
+document.getElementById('fHasta').value=hoy.toISOString().slice(0,10);
 
-let datosActuales = [];
-let grafCalibres, grafFechas;
-
-const fm = n => Math.round(n).toLocaleString('es-CL');
-
-async function cargar() {
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('resultados').style.display = 'none';
-
-  const desde = document.getElementById('fDesde').value;
-  const hasta = document.getElementById('fHasta').value;
-  const especie = document.getElementById('fEspecie').value;
-
-  const headers = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
-
-  let q1 = `${SB_URL}/rest/v1/ventas_f1?select=*&fecha=gte.${desde}&fecha=lte.${hasta}&order=fecha.asc`;
-  let q2 = `${SB_URL}/rest/v1/ventas_f2?select=*&fecha=gte.${desde}&fecha=lte.${hasta}&order=fecha.asc`;
-  if (especie) { q1 += `&fruta=eq.${especie}`; q2 += `&fruta=eq.${especie}`; }
-
-  const [r1, r2] = await Promise.all([fetch(q1, {headers}), fetch(q2, {headers})]);
-  const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
-
-  datosActuales = [...(Array.isArray(d1)?d1:[]), ...(Array.isArray(d2)?d2:[])];
-  mostrar(datosActuales);
+async function cargar(){
+  document.getElementById('msg').style.display='block';
+  document.getElementById('msg').textContent='Cargando...';
+  document.getElementById('resultados').style.display='none';
+  const desde=document.getElementById('fDesde').value;
+  const hasta=document.getElementById('fHasta').value;
+  const tipo=document.getElementById('fTipo').value;
+  let d1=[],d2=[];
+  const base=`?select=*&fecha=gte.${desde}&fecha=lte.${hasta}&order=fecha.asc`;
+  if(tipo!=='f2'){const r=await fetch(SB_URL+'/rest/v1/ventas_f1'+base,{headers:H});d1=await r.json();if(!Array.isArray(d1))d1=[];}
+  if(tipo!=='f1'){const r=await fetch(SB_URL+'/rest/v1/ventas_f2'+base,{headers:H});d2=await r.json();if(!Array.isArray(d2))d2=[];}
+  d1=d1.map(x=>({...x,_tipo:'F1'}));
+  d2=d2.map(x=>({...x,_tipo:'F2'}));
+  datos=[...d1,...d2];
+  mostrar();
 }
 
-function mostrar(datos) {
-  // Totales
-  const totalKg = datos.reduce((a,r) => a + (r.kilos||0), 0);
-  const totalNeto = datos.reduce((a,r) => a + (r.neto||0), 0);
-  const guias = new Set(datos.map(r => r.guia)).size;
-  document.getElementById('totalKg').textContent = fm(totalKg) + ' kg';
-  document.getElementById('totalNeto').textContent = '$' + fm(totalNeto);
-  document.getElementById('totalGuias').textContent = guias;
-
-  // Tabla detalle
-  const tbody = document.getElementById('tbodyDetalle');
-  tbody.innerHTML = datos.map(r => `
-    <tr>
-      <td>${r.fecha||''}</td>
-      <td>${r.guia||''}</td>
-      <td>${r.fruta||''}</td>
-      <td>${r.calibre||'-'}</td>
-      <td>${fm(r.kilos||0)} kg</td>
-      <td>$${fm(r.pventa||0)}</td>
-      <td>$${fm(r.neto||0)}</td>
-    </tr>`).join('');
-
-  // Gráfico por calibre
-  const porCalibre = {};
-  datos.forEach(r => {
-    const k = (r.calibre||'Sin calibre');
-    porCalibre[k] = (porCalibre[k]||0) + (r.kilos||0);
-  });
-  if (grafCalibres) grafCalibres.destroy();
-  grafCalibres = new Chart(document.getElementById('graficoCalibres'), {
-    type: 'bar',
-    data: {
-      labels: Object.keys(porCalibre),
-      datasets: [{ label: 'Kilos', data: Object.values(porCalibre), backgroundColor: '#2d6a4f', borderRadius: 6 }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-  });
-
-  // Gráfico por fecha
-  const porFecha = {};
-  datos.forEach(r => { porFecha[r.fecha] = (porFecha[r.fecha]||0) + (r.kilos||0); });
-  const fechas = Object.keys(porFecha).sort();
-  if (grafFechas) grafFechas.destroy();
-  grafFechas = new Chart(document.getElementById('graficoFechas'), {
-    type: 'line',
-    data: {
-      labels: fechas,
-      datasets: [{ label: 'Kilos', data: fechas.map(f => porFecha[f]), borderColor: '#f4a261', backgroundColor: '#f4a26122', fill: true, tension: 0.3 }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-  });
-
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('resultados').style.display = 'block';
+function filtrar(){
+  const esp=document.getElementById('fEspecie').value;
+  const cal=document.getElementById('fCalibre').value;
+  const cli=document.getElementById('fCliente').value.toLowerCase();
+  return datos.filter(r=>
+    (!esp||r.fruta===esp)&&
+    (!cal||r.calibre===cal)&&
+    (!cli||(r.proveedor||r.cliente||'').toLowerCase().includes(cli))
+  );
 }
 
-function exportarExcel() {
-  const rows = [['Fecha','Guía','Especie','Calibre','Kilos','Precio','Neto']];
-  datosActuales.forEach(r => rows.push([r.fecha, r.guia, r.fruta, r.calibre||'-', r.kilos||0, r.pventa||0, r.neto||0]));
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:12},{wch:10},{wch:14},{wch:10},{wch:10},{wch:12},{wch:12}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
-  XLSX.writeFile(wb, `ventas_${document.getElementById('fDesde').value}_${document.getElementById('fHasta').value}.xlsx`);
+function mostrar(){
+  const d=filtrar();
+  const kg=d.reduce((a,r)=>a+(r.kilos||0),0);
+  const neto=d.reduce((a,r)=>a+(r.neto||0),0);
+  const guias=new Set(d.map(r=>r.guia)).size;
+  document.getElementById('tKg').textContent=fm(kg)+' kg';
+  document.getElementById('tNeto').textContent='$'+fm(neto);
+  document.getElementById('tGuias').textContent=guias;
+  document.getElementById('tProm').textContent=kg?'$'+fm(neto/kg):'—';
+
+  // Tabla
+  document.getElementById('tbody').innerHTML=d.map(r=>`<tr>
+    <td>${r.fecha||''}</td><td>${r._tipo||''}</td><td>${r.guia||''}</td>
+    <td>${r.proveedor||r.cliente||''}</td><td>${r.fruta||''}</td><td>${r.calibre||'-'}</td>
+    <td>${fm(r.kilos||0)}</td><td>$${fm(r.pventa||0)}</td><td>$${fm(r.neto||0)}</td>
+  </tr>`).join('');
+
+  // Gráficos
+  const COLORS=['#2d6a4f','#f4a261','#52b788','#e76f51','#264653','#a8dadc','#457b9d','#e9c46a'];
+  function agrupar(campo){
+    const m={};
+    d.forEach(r=>{const k=r[campo]||'Sin '+campo;m[k]=(m[k]||0)+(r.kilos||0);});
+    return m;
+  }
+  function chart(id,tipo,labels,datos,colors){
+    if(graficos[id])graficos[id].destroy();
+    graficos[id]=new Chart(document.getElementById(id),{
+      type:tipo,
+      data:{labels,datasets:[{label:'Kilos',data:datos,backgroundColor:colors,borderColor:tipo==='line'?colors[0]:colors,borderWidth:tipo==='line'?2:0,fill:tipo==='line',tension:0.3,borderRadius:tipo==='bar'?6:0}]},
+      options:{plugins:{legend:{display:tipo==='pie'}},scales:tipo!=='pie'?{y:{beginAtZero:true}}:{}}
+    });
+  }
+  const cal=agrupar('calibre');
+  chart('gCalibre','bar',Object.keys(cal),Object.values(cal),COLORS);
+  const esp=agrupar('fruta');
+  chart('gEspecie','pie',Object.keys(esp),Object.values(esp),COLORS);
+  const fecha={};
+  d.forEach(r=>{fecha[r.fecha]=(fecha[r.fecha]||0)+(r.kilos||0);});
+  const fechas=Object.keys(fecha).sort();
+  chart('gFecha','line',fechas,fechas.map(f=>fecha[f]),[COLORS[0]]);
+
+  document.getElementById('msg').style.display='none';
+  document.getElementById('resultados').style.display='block';
+}
+
+// Filtros en tiempo real
+['fEspecie','fCalibre','fCliente'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(datos.length)mostrar();}));
+document.getElementById('fCliente').addEventListener('input',()=>{if(datos.length)mostrar();});
+
+function exportarExcel(){
+  const d=filtrar();
+  const rows=[['Fecha','Tipo','Guía','Cliente/Proveedor','Especie','Calibre','Kilos','$/kg','Neto']];
+  d.forEach(r=>rows.push([r.fecha,r._tipo,r.guia,r.proveedor||r.cliente||'',r.fruta,r.calibre||'-',r.kilos||0,r.pventa||0,r.neto||0]));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:6},{wch:8},{wch:20},{wch:14},{wch:10},{wch:10},{wch:10},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,ws,'Ventas');
+  XLSX.writeFile(wb,`ventas_${document.getElementById('fDesde').value}.xlsx`);
 }
 </script>
 </body>
