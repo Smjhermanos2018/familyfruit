@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FamilyFruit ERP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --verde: #2d6a4f;
+    --verde-claro: #52b788;
+    --naranja: #f4a261;
+    --fondo: #f8f9f4;
+    --gris: #6b7280;
+    --blanco: #ffffff;
+    --sombra: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--fondo);
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .login-card {
+    background: var(--blanco);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--sombra);
+    text-align: center;
+  }
+
+  .login-card .logo {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--verde);
+    letter-spacing: -1px;
+  }
+
+  .login-card .logo span { color: var(--naranja); }
+
+  .login-card p {
+    color: var(--gris);
+    font-size: 0.85rem;
+    margin: 6px 0 28px;
+  }
+
+  .login-card input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .login-card input:focus { border-color: var(--verde-claro); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-primary:hover { background: #245a40; }
+
+  #login-error {
+    color: #ef4444;
+    font-size: 0.82rem;
+    margin-top: 10px;
+    display: none;
+  }
+
+  /* ── DASHBOARD ── */
+  #dashboard { display: none; }
+
+  header {
+    background: var(--verde);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header .logo {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  header .logo span { color: var(--naranja); }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+  }
+
+  .rol-badge {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-logout {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+  .bienvenida {
+    padding: 24px 20px 8px;
+    font-size: 1rem;
+    color: var(--gris);
+  }
+
+  .bienvenida strong { color: #1a1a1a; }
+
+  /* ── GRID DE MÓDULOS ── */
+  .grid-modulos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    padding: 16px 20px 30px;
+  }
+
+  .modulo-card {
+    background: var(--blanco);
+    border-radius: 14px;
+    padding: 22px 16px;
+    text-align: center;
+    text-decoration: none;
+    color: #1a1a1a;
+    box-shadow: var(--sombra);
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    border: 2px solid transparent;
+  }
+
+  .modulo-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    border-color: var(--verde-claro);
+  }
+
+  .modulo-card .icono {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  .modulo-card .nombre {
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .modulo-card .desc {
+    font-size: 0.75rem;
+    color: var(--gris);
+    margin-top: 4px;
+  }
+
+  /* ── PRÓXIMAMENTE ── */
+  .modulo-card.pronto {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .modulo-card.pronto:hover {
+    transform: none;
+    box-shadow: var(--sombra);
+    border-color: transparent;
+  }
+
+  .pronto-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    background: #f3f4f6;
+    color: var(--gris);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 5px;
+    font-weight: 600;
+  }
+
+  /* ── SEPARADOR DE SECCIÓN ── */
+  .seccion-titulo {
+    padding: 8px 20px 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gris);
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="logo">Family<span>Fruit</span></div>
+    <p>Sistema de gestión comercial</p>
+    <input type="email" id="email" placeholder="Correo electrónico" />
+    <input type="password" id="password" placeholder="Contraseña" />
+    <button class="btn-primary" onclick="login()">Ingresar</button>
+    <div id="login-error">Credenciales incorrectas. Intenta de nuevo.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="logo">Family<span>Fruit</span></div>
+    <div class="user-info">
+      <span class="rol-badge" id="rol-badge">—</span>
+      <span id="user-email-label" style="opacity:0.7"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="bienvenida">
+    Bienvenido, <strong id="nombre-usuario">—</strong>
+  </div>
+
+  <!-- Módulos se renderizan aquí según rol -->
+  <div id="modulos-container"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ruujgblgrxdkktgctppv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── MÓDULOS POR ROL ──
+const MODULOS = {
+  admin: [
+    {
+      seccion: 'Operaciones',
+      items: [
+        { icono: '📊', nombre: 'Ventas F1 / F2', desc: 'Registro de ventas', url: 'ventas.html' },
+        { icono: '🛒', nombre: 'Órdenes de Compra', desc: 'Gestión de OC', url: 'orden-compra.html' },
+        { icono: '📦', nombre: 'Stock', desc: 'Inventario de fruta', url: 'stock.html', pronto: true },
+      ]
+    },
+    {
+      seccion: 'Proveedores',
+      items: [
+        { icono: '🧑‍🌾', nombre: 'Portal Proveedores', desc: 'Vista de productores', url: 'portal_familyfruit.html' },
+      ]
+    },
+    {
+      seccion: 'Reportes',
+      items: [
+        { icono: '📈', nombre: 'Reportes', desc: 'Resumen general', url: 'reportes.html', pronto: true },
+      ]
+    }
+  ],
+  vendedor: [
+    {
+      seccion: 'Operaciones',
+      items: [
+        { icono: '📊', nombre: 'Ventas F1 / F2', desc: 'Registro de ventas', url: 'ventas.html' },
+        { icono: '📦', nombre: 'Stock', desc: 'Inventario de fruta', url: 'stock.html', pronto: true },
+      ]
+    }
+  ],
+  productor: [
+    {
+      seccion: 'Mi información',
+      items: [
+        { icono: '🧑‍🌾', nombre: 'Mi Portal', desc: 'Tus guías y liquidaciones', url: 'portal_familyfruit.html' },
+      ]
+    }
+  ]
+};
+
+// ── LOGIN ──
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value;
+  const err   = document.getElementById('login-error');
+  err.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { err.style.display = 'block'; return; }
+
+  await cargarDashboard(data.user);
+}
+
+// ── LOGOUT ──
+async function logout() {
+  await sb.auth.signOut();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// ── CARGAR DASHBOARD ──
+async function cargarDashboard(user) {
+  // Busca rol en tabla usuarios
+  const { data: perfil } = await sb
+    .from('usuarios')
+    .select('rol, nombre')
+    .eq('id', user.id)
+    .single();
+
+  const rol    = perfil?.rol    || 'productor';
+  const nombre = perfil?.nombre || user.email;
+
+  document.getElementById('rol-badge').textContent      = rol;
+  document.getElementById('user-email-label').textContent = user.email;
+  document.getElementById('nombre-usuario').textContent  = nombre;
+
+  renderModulos(rol);
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display    = 'block';
+}
+
+// ── RENDER MÓDULOS ──
+function renderModulos(rol) {
+  const container = document.getElementById('modulos-container');
+  const secciones = MODULOS[rol] || MODULOS['productor'];
+  container.innerHTML = '';
+
+  secciones.forEach(sec => {
+    const tit = document.createElement('div');
+    tit.className = 'seccion-titulo';
+    tit.textContent = sec.seccion;
+    container.appendChild(tit);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid-modulos';
+
+    sec.items.forEach(mod => {
+      const card = document.createElement('div');
+      card.className = 'modulo-card' + (mod.pronto ? ' pronto' : '');
+      card.innerHTML = `
+        <div class="icono">${mod.icono}</div>
+        <div class="nombre">${mod.nombre}</div>
+        <div class="desc">${mod.desc}</div>
+        ${mod.pronto ? '<span class="pronto-tag">Próximamente</span>' : ''}
+      `;
+      if (!mod.pronto) card.onclick = () => window.location.href = mod.url;
+      grid.appendChild(card);
+    });
+
+    container.appendChild(grid);
+  });
+}
+
+// ── AUTO LOGIN si hay sesión activa ──
+(async () => {
+  const { data } = await sb.auth.getSession();
+  if (data.session?.user) await cargarDashboard(data.session.user);
+})();
+</script>
+</body>
+</html>
