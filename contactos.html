@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contactos — FamilyFruit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--g:#2d6a4f;--gl:#52b788;--bg:#f8f9f4;--card:#fff;--bd:#e5e7eb;--tx:#1a1a1a;--gris:#6b7280;--red:#ef4444;--blue:#1a5fa5;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);}
+header{background:var(--g);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+header .logo{font-size:1.1rem;font-weight:700;}
+.btn-back{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;font-family:inherit;}
+.main{max-width:960px;margin:0 auto;padding:20px 16px;}
+.card{background:var(--card);border-radius:12px;border:1px solid var(--bd);padding:18px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.fld label{font-size:11px;font-weight:600;color:var(--gris);display:block;margin-bottom:4px;}
+.fld input,.fld select,.fld textarea{width:100%;padding:9px 11px;border:1.5px solid var(--bd);border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:#fff;}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--gl);}
+.btn-primary{background:var(--g);color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+.btn-primary:hover{background:#245a40;}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.tab{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd);background:#fff;color:var(--gris);font-family:inherit;}
+.tab.active{background:var(--g);color:#fff;border-color:var(--g);}
+.fil-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.fil-row input{padding:7px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff;flex:1;min-width:180px;}
+.contacto-card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.contacto-info .nombre{font-size:15px;font-weight:700;}
+.contacto-info .tipo-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px;}
+.badge-productor{background:#e8f5e8;color:#2d6a11;}
+.badge-cliente{background:#e8f1fb;color:var(--blue);}
+.badge-ambos{background:#fef9e7;color:#b8860b;}
+.contacto-info .datos{font-size:12px;color:var(--gris);margin-top:5px;line-height:1.7;}
+.contacto-acciones{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;}
+.btn-sm{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;white-space:nowrap;}
+.btn-edit{background:#e8f1fb;color:var(--blue);}
+.btn-del{background:#fee2e2;color:var(--red);}
+.btn-ver{background:#e8f5e8;color:#2d6a11;}
+.empty{text-align:center;padding:30px;color:var(--gris);font-size:13px;}
+.msg{padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none;}
+.msg-ok{background:#e8f5e8;color:#2d6a11;border:1px solid #b8d98b;}
+.msg-err{background:#fee2e2;color:var(--red);border:1px solid #fca5a5;}
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.modal.show{display:flex;}
+.modal-box{background:#fff;border-radius:12px;padding:22px;width:100%;max-width:560px;margin:auto;}
+.modal-title{font-size:15px;font-weight:700;color:var(--g);margin-bottom:16px;}
+.modal-btns{display:flex;gap:8px;margin-top:14px;}
+.modal-btns button{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;}
+.btn-cancel{background:#f3f4f6;color:var(--tx);}
+.btn-save{background:var(--g);color:#fff;}
+/* PERFIL */
+.perfil-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.perfil-modal.show{display:flex;}
+.perfil-box{background:#fff;border-radius:12px;width:100%;max-width:700px;margin:auto;overflow:hidden;}
+.perfil-header{background:var(--g);color:#fff;padding:20px 22px;}
+.perfil-header .pnombre{font-size:18px;font-weight:700;}
+.perfil-header .ptipo{font-size:12px;opacity:.75;margin-top:3px;}
+.perfil-body{padding:20px 22px;}
+.perfil-datos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.pdato{font-size:13px;}<br>.pdato span{color:var(--gris);font-size:11px;display:block;}
+.perfil-section{font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;}
+.venta-row{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px;background:var(--bg);margin-bottom:5px;font-size:13px;}
+.perfil-close{background:#f3f4f6;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;margin-top:14px;font-family:inherit;}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr;}.perfil-datos{grid-template-columns:1fr;}.contacto-card{flex-direction:column;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">👥 Contactos</div>
+  <a href="index.html" class="btn-back">← ERP</a>
+</header>
+
+<div class="main">
+  <div id="msg" class="msg"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('todos',this)">Todos</button>
+    <button class="tab" onclick="setTab('productor',this)">Productores</button>
+    <button class="tab" onclick="setTab('cliente',this)">Clientes</button>
+    <button class="tab" onclick="setTab('ambos',this)">Ambos</button>
+    <button class="btn-primary" onclick="abrirNuevo()" style="margin-left:auto">+ Nuevo contacto</button>
+  </div>
+
+  <!-- BÚSQUEDA -->
+  <div class="fil-row">
+    <input type="text" id="buscar" placeholder="🔍 Buscar por nombre, RUT o teléfono..." oninput="renderLista()">
+  </div>
+
+  <!-- LISTA -->
+  <div id="lista"></div>
+</div>
+
+<!-- MODAL CREAR/EDITAR -->
+<div class="modal" id="modal-form">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-form-title">Nuevo contacto</div>
+    <input type="hidden" id="f-id">
+    <div class="grid2">
+      <div class="fld" style="grid-column:span 2"><label>Nombre *</label><input type="text" id="f-nombre" placeholder="Nombre completo o razón social"></div>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label>Tipo *</label>
+        <select id="f-tipo">
+          <option value="productor">Productor</option>
+          <option value="cliente">Cliente</option>
+          <option value="ambos">Ambos</option>
+        </select>
+      </div>
+      <div class="fld"><label>RUT</label><input type="text" id="f-rut" placeholder="12.345.678-9"></div>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label>Teléfono</label><input type="text" id="f-tel" placeholder="+56 9 ..."></div>
+      <div class="fld"><label>Email</label><input type="text" id="f-email" placeholder="correo@mail.com"></div>
+    </div>
+    <div class="fld" style="margin-bottom:10px"><label>Dirección</label><input type="text" id="f-dir" placeholder="Dirección"></div>
+    <div class="card-title" style="margin-top:10px">Datos bancarios</div>
+    <div class="grid3">
+      <div class="fld"><label>Banco</label><input type="text" id="f-banco" placeholder="Banco BCI..."></div>
+      <div class="fld"><label>Tipo cuenta</label>
+        <select id="f-tipo-cuenta">
+          <option value="">Seleccionar</option>
+          <option>Cuenta corriente</option><option>Cuenta vista</option>
+          <option>Cuenta RUT</option><option>Cuenta de ahorro</option>
+        </select>
+      </div>
+      <div class="fld"><label>N° cuenta</label><input type="text" id="f-num-cuenta" placeholder="000000000"></div>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label>Titular</label><input type="text" id="f-titular" placeholder="Nombre titular"></div>
+      <div class="fld"><label>RUT titular</label><input type="text" id="f-rut-titular" placeholder="12.345.678-9"></div>
+    </div>
+    <div class="fld" style="margin-bottom:10px"><label>Observaciones</label>
+      <textarea id="f-obs" rows="2" placeholder="Notas adicionales..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModal('modal-form')">Cancelar</button>
+      <button class="btn-save" onclick="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PERFIL -->
+<div class="perfil-modal" id="modal-perfil">
+  <div class="perfil-box">
+    <div class="perfil-header">
+      <div class="pnombre" id="p-nombre"></div>
+      <div class="ptipo" id="p-tipo"></div>
+    </div>
+    <div class="perfil-body">
+      <div class="perfil-datos" id="p-datos"></div>
+      <div id="p-ventas"></div>
+      <button class="perfil-close" onclick="cerrarModal('modal-perfil')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ruujgblgrxdkktgctppv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let contactos=[];
+let tabActual='todos';
+
+function msg(txt,ok=true){
+  const el=document.getElementById('msg');
+  el.textContent=txt;el.className='msg '+(ok?'msg-ok':'msg-err');
+  el.style.display='block';setTimeout(()=>el.style.display='none',3000);
+}
+function f(n){return Math.round(n).toLocaleString('es-CL');}
+function fm(n){return '$'+f(n);}
+
+async function cargar(){
+  const {data,error}=await sb.from('contactos').select('*').order('nombre');
+  if(error){msg('Error cargando contactos',false);return;}
+  contactos=data||[];
+  renderLista();
+}
+
+function setTab(tab,btn){
+  tabActual=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderLista();
+}
+
+function renderLista(){
+  const buscar=document.getElementById('buscar').value.toLowerCase();
+  let data=contactos;
+  if(tabActual!=='todos') data=data.filter(c=>c.tipo===tabActual);
+  if(buscar) data=data.filter(c=>
+    (c.nombre||'').toLowerCase().includes(buscar)||
+    (c.rut||'').toLowerCase().includes(buscar)||
+    (c.telefono||'').toLowerCase().includes(buscar)
+  );
+  const el=document.getElementById('lista');
+  if(!data.length){el.innerHTML='<div class="empty">Sin contactos registrados</div>';return;}
+  el.innerHTML=data.map(c=>`
+    <div class="contacto-card">
+      <div class="contacto-info">
+        <div class="nombre">${c.nombre}<span class="tipo-badge badge-${c.tipo}">${c.tipo}</span></div>
+        <div class="datos">
+          ${c.rut?'RUT: '+c.rut+' · ':''}
+          ${c.telefono?'📞 '+c.telefono+' · ':''}
+          ${c.email?'✉ '+c.email:''}
+          ${c.banco?'<br>🏦 '+c.banco+(c.tipo_cuenta?' · '+c.tipo_cuenta:'')+(c.num_cuenta?' · '+c.num_cuenta:''):''}
+        </div>
+      </div>
+      <div class="contacto-acciones">
+        <button class="btn-sm btn-ver" onclick="verPerfil(${c.id})">👁 Ver</button>
+        <button class="btn-sm btn-edit" onclick="abrirEdit(${c.id})">✏️</button>
+        <button class="btn-sm btn-del" onclick="eliminar(${c.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirNuevo(){
+  document.getElementById('modal-form-title').textContent='Nuevo contacto';
+  document.getElementById('f-id').value='';
+  ['f-nombre','f-rut','f-tel','f-email','f-dir','f-banco','f-num-cuenta','f-titular','f-rut-titular','f-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-tipo').value='productor';
+  document.getElementById('f-tipo-cuenta').value='';
+  document.getElementById('modal-form').classList.add('show');
+}
+
+function abrirEdit(id){
+  const c=contactos.find(x=>x.id===id);if(!c) return;
+  document.getElementById('modal-form-title').textContent='Editar contacto';
+  document.getElementById('f-id').value=id;
+  document.getElementById('f-nombre').value=c.nombre||'';
+  document.getElementById('f-tipo').value=c.tipo||'productor';
+  document.getElementById('f-rut').value=c.rut||'';
+  document.getElementById('f-tel').value=c.telefono||'';
+  document.getElementById('f-email').value=c.email||'';
+  document.getElementById('f-dir').value=c.direccion||'';
+  document.getElementById('f-banco').value=c.banco||'';
+  document.getElementById('f-tipo-cuenta').value=c.tipo_cuenta||'';
+  document.getElementById('f-num-cuenta').value=c.num_cuenta||'';
+  document.getElementById('f-titular').value=c.titular_cuenta||'';
+  document.getElementById('f-rut-titular').value=c.rut_titular||'';
+  document.getElementById('f-obs').value=c.obs||'';
+  document.getElementById('modal-form').classList.add('show');
+}
+
+async function guardar(){
+  const nombre=document.getElementById('f-nombre').value.trim();
+  if(!nombre){msg('Ingresa el nombre',false);return;}
+  const id=document.getElementById('f-id').value;
+  const rec={
+    nombre,
+    tipo:document.getElementById('f-tipo').value,
+    rut:document.getElementById('f-rut').value,
+    telefono:document.getElementById('f-tel').value,
+    email:document.getElementById('f-email').value,
+    direccion:document.getElementById('f-dir').value,
+    banco:document.getElementById('f-banco').value,
+    tipo_cuenta:document.getElementById('f-tipo-cuenta').value,
+    num_cuenta:document.getElementById('f-num-cuenta').value,
+    titular_cuenta:document.getElementById('f-titular').value,
+    rut_titular:document.getElementById('f-rut-titular').value,
+    obs:document.getElementById('f-obs').value,
+  };
+  let error;
+  if(id){
+    ({error}=await sb.from('contactos').update(rec).eq('id',id));
+  } else {
+    rec.id=Date.now();
+    ({error}=await sb.from('contactos').insert(rec));
+  }
+  if(error){msg('Error: '+error.message,false);return;}
+  cerrarModal('modal-form');
+  await cargar();
+  msg(id?'✅ Contacto actualizado':'✅ Contacto creado');
+}
+
+async function eliminar(id){
+  if(!confirm('¿Eliminar este contacto?')) return;
+  await sb.from('contactos').delete().eq('id',id);
+  await cargar();
+}
+
+async function verPerfil(id){
+  const c=contactos.find(x=>x.id===id);if(!c) return;
+  document.getElementById('p-nombre').textContent=c.nombre;
+  document.getElementById('p-tipo').textContent=c.tipo.toUpperCase()+(c.rut?' · RUT: '+c.rut:'');
+  
+  let datos='';
+  if(c.telefono) datos+=`<div class="pdato"><span>Teléfono</span>${c.telefono}</div>`;
+  if(c.email) datos+=`<div class="pdato"><span>Email</span>${c.email}</div>`;
+  if(c.direccion) datos+=`<div class="pdato"><span>Dirección</span>${c.direccion}</div>`;
+  if(c.banco) datos+=`<div class="pdato"><span>Banco</span>${c.banco}</div>`;
+  if(c.tipo_cuenta) datos+=`<div class="pdato"><span>Tipo cuenta</span>${c.tipo_cuenta}</div>`;
+  if(c.num_cuenta) datos+=`<div class="pdato"><span>N° cuenta</span>${c.num_cuenta}</div>`;
+  if(c.titular_cuenta) datos+=`<div class="pdato"><span>Titular</span>${c.titular_cuenta}</div>`;
+  if(c.obs) datos+=`<div class="pdato" style="grid-column:span 2"><span>Observaciones</span>${c.obs}</div>`;
+  document.getElementById('p-datos').innerHTML=datos||'<div style="color:var(--gris);font-size:13px">Sin datos adicionales</div>';
+
+  // Cargar ventas del contacto
+  const [r1,r2,r3]=await Promise.all([
+    sb.from('ventas_f1').select('guia,fecha,fruta,kilos,total').eq('proveedor',c.nombre).order('fecha',{ascending:false}).limit(5),
+    sb.from('ventas_f2').select('guia,fecha,fruta,kilos,total').eq('proveedor',c.nombre).order('fecha',{ascending:false}).limit(5),
+    sb.from('ventas_netas').select('guia,fecha,especie,kilos,precio').eq('proveedor',c.nombre).order('fecha',{ascending:false}).limit(5),
+  ]);
+
+  let ventasHtml='';
+  if(r1.data?.length){
+    ventasHtml+=`<div class="perfil-section">Ventas F1 — Comisión</div>`;
+    ventasHtml+=r1.data.map(v=>`<div class="venta-row"><span>${v.guia} · ${v.fecha} · ${v.fruta}</span><strong>${fm(v.total)}</strong></div>`).join('');
+  }
+  if(r2.data?.length){
+    ventasHtml+=`<div class="perfil-section">Ventas F2 — Compra/Venta</div>`;
+    ventasHtml+=r2.data.map(v=>`<div class="venta-row"><span>${v.guia} · ${v.fecha} · ${v.fruta}</span><strong>${fm(v.total)}</strong></div>`).join('');
+  }
+  if(r3.data?.length){
+    ventasHtml+=`<div class="perfil-section">Ventas Netas</div>`;
+    ventasHtml+=r3.data.map(v=>`<div class="venta-row"><span>${v.guia} · ${v.fecha} · ${v.especie}</span><strong>${fm(v.kilos*v.precio)}</strong></div>`).join('');
+  }
+  if(!ventasHtml) ventasHtml='<div style="color:var(--gris);font-size:13px">Sin ventas registradas</div>';
+  document.getElementById('p-ventas').innerHTML=ventasHtml;
+
+  document.getElementById('modal-perfil').classList.add('show');
+}
+
+function cerrarModal(id){document.getElementById(id).classList.remove('show');}
+
+cargar();
+</script>
+</body>
+</html>
