@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventas Netas — FamilyFruit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--g:#2d6a4f;--gl:#52b788;--bg:#f8f9f4;--card:#fff;--bd:#e5e7eb;--tx:#1a1a1a;--gris:#6b7280;--red:#ef4444;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);}
+header{background:var(--g);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+header .logo{font-size:1.1rem;font-weight:700;}
+.btn-back{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;font-family:inherit;}
+.main{max-width:960px;margin:0 auto;padding:20px 16px;}
+.card{background:var(--card);border-radius:12px;border:1px solid var(--bd);padding:18px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.fld label{font-size:11px;font-weight:600;color:var(--gris);display:block;margin-bottom:4px;}
+.fld input,.fld select{width:100%;padding:9px 11px;border:1.5px solid var(--bd);border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:#fff;}
+.fld input:focus,.fld select:focus{border-color:var(--gl);}
+.btn-primary{width:100%;background:var(--g);color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+.btn-primary:hover{background:#245a40;}
+.totales{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.tot-card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:center;}
+.tot-v{font-size:20px;font-weight:700;color:var(--g);}
+.tot-l{font-size:11px;color:var(--gris);margin-top:3px;}
+.export-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.btn-excel{background:#217346;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.btn-pdf{background:#c0392b;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.fil-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-end;}
+.fil-row select,.fil-row input{padding:7px 10px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{padding:8px 6px;text-align:left;font-size:11px;font-weight:700;color:var(--gris);border-bottom:2px solid var(--bd);text-transform:uppercase;white-space:nowrap;}
+td{padding:8px 6px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+.btn-sm{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:inherit;}
+.btn-edit{background:#e8f1fb;color:#1a5fa5;}
+.btn-del{background:#fee2e2;color:var(--red);}
+.empty{text-align:center;padding:20px;color:var(--gris);font-size:13px;}
+.msg{padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none;}
+.msg-ok{background:#e8f5e8;color:#2d6a11;border:1px solid #b8d98b;}
+.msg-err{background:#fee2e2;color:var(--red);border:1px solid #fca5a5;}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;}
+.modal.show{display:flex;}
+.modal-box{background:#fff;border-radius:12px;padding:22px;width:90%;max-width:500px;}
+.modal-title{font-size:15px;font-weight:700;color:var(--g);margin-bottom:14px;}
+.modal-btns{display:flex;gap:8px;margin-top:14px;}
+.modal-btns button{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;}
+.btn-cancel{background:#f3f4f6;color:var(--tx);}
+.btn-save{background:var(--g);color:#fff;}
+@media(max-width:600px){.grid2,.grid3,.grid4{grid-template-columns:1fr;}.totales{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🍓 Ventas Netas</div>
+  <a href="index.html" class="btn-back">← ERP</a>
+</header>
+
+<div class="main">
+  <div id="msg" class="msg"></div>
+
+  <!-- TOTALES -->
+  <div class="totales">
+    <div class="tot-card"><div class="tot-v" id="t-guias">0</div><div class="tot-l">Guías</div></div>
+    <div class="tot-card"><div class="tot-v" id="t-kilos">0 kg</div><div class="tot-l">Total kilos</div></div>
+    <div class="tot-card"><div class="tot-v" id="t-total">$0</div><div class="tot-l">Total neto</div></div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="card">
+    <div class="card-title">+ Nueva venta neta</div>
+    <div class="grid2">
+      <div class="fld"><label>N° Guía *</label><input type="text" id="guia" placeholder="GU-0001"></div>
+      <div class="fld"><label>Fecha *</label><input type="date" id="fecha"></div>
+    </div>
+    <div class="grid4">
+      <div class="fld"><label>Especie *</label>
+        <select id="especie">
+          <option value="">Seleccionar...</option>
+          <option>Clementinas</option><option>Mandarinas</option><option>Naranjas</option>
+          <option>Limones</option><option>Paltas</option><option>Cerezas</option>
+          <option>Uvas</option><option>Yanov</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fld"><label>Calibre</label>
+        <select id="calibre">
+          <option value="">Sin calibre</option>
+          <option>Comercial</option><option>Chico</option><option>Pre</option><option>Sin cera</option>
+        </select>
+      </div>
+      <div class="fld"><label>Kilos *</label><input type="number" id="kilos" placeholder="0" min="0" step="0.1" oninput="calcTotal()"></div>
+      <div class="fld"><label>$ por kilo *</label><input type="number" id="precio" placeholder="0" min="0" oninput="calcTotal()"></div>
+    </div>
+    <div class="fld" style="margin-bottom:10px">
+      <label>Total neto: <strong id="preview-total" style="color:var(--g)">$0</strong></label>
+    </div>
+    <button class="btn-primary" onclick="agregar()">+ Registrar venta neta</button>
+  </div>
+
+  <!-- FILTROS Y EXPORT -->
+  <div class="fil-row">
+    <select id="fil-especie" onchange="renderTabla()">
+      <option value="">Todas las especies</option>
+      <option>Clementinas</option><option>Mandarinas</option><option>Naranjas</option>
+      <option>Limones</option><option>Paltas</option><option>Cerezas</option><option>Uvas</option>
+    </select>
+    <input type="date" id="fil-desde" onchange="renderTabla()" placeholder="Desde">
+    <input type="date" id="fil-hasta" onchange="renderTabla()" placeholder="Hasta">
+  </div>
+
+  <div class="export-row">
+    <button class="btn-excel" onclick="exportExcel()">📥 Exportar Excel</button>
+    <button class="btn-pdf" onclick="exportPDF()">📄 Exportar PDF</button>
+  </div>
+
+  <!-- TABLA -->
+  <div class="card">
+    <div class="card-title">Registro de ventas netas</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Guía</th><th>Fecha</th><th>Especie</th><th>Calibre</th>
+          <th>Kilos</th><th>$/kg</th><th>Total</th><th></th>
+        </tr></thead>
+        <tbody id="tabla-body"></tbody>
+        <tfoot id="tabla-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal" id="modal-edit">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Editar venta</div>
+    <input type="hidden" id="edit-id">
+    <div class="grid2">
+      <div class="fld"><label>N° Guía</label><input type="text" id="edit-guia"></div>
+      <div class="fld"><label>Fecha</label><input type="date" id="edit-fecha"></div>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label>Especie</label>
+        <select id="edit-especie">
+          <option value="">Seleccionar...</option>
+          <option>Clementinas</option><option>Mandarinas</option><option>Naranjas</option>
+          <option>Limones</option><option>Paltas</option><option>Cerezas</option>
+          <option>Uvas</option><option>Yanov</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="fld"><label>Calibre</label>
+        <select id="edit-calibre">
+          <option value="">Sin calibre</option>
+          <option>Comercial</option><option>Chico</option><option>Pre</option><option>Sin cera</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label>Kilos</label><input type="number" id="edit-kilos" min="0" step="0.1"></div>
+      <div class="fld"><label>$ por kilo</label><input type="number" id="edit-precio" min="0"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" onclick="guardarEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ruujgblgrxdkktgctppv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1dWpnYmxncnhka2t0Z2N0cHB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTMzOTIsImV4cCI6MjA5Mjk4OTM5Mn0.TSijszsdSZMWx0XC61KGChT_lCDeqBLcPIS454o_Amc';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let ventas=[];
+
+function msg(txt,ok=true){
+  const el=document.getElementById('msg');
+  el.textContent=txt;el.className='msg '+(ok?'msg-ok':'msg-err');
+  el.style.display='block';setTimeout(()=>el.style.display='none',3000);
+}
+function today(){return new Date().toISOString().split('T')[0];}
+function f(n){return Math.round(n).toLocaleString('es-CL');}
+function fm(n){return '$'+f(n);}
+
+function calcTotal(){
+  const k=parseFloat(document.getElementById('kilos').value)||0;
+  const p=parseFloat(document.getElementById('precio').value)||0;
+  document.getElementById('preview-total').textContent=fm(k*p);
+}
+
+async function cargar(){
+  const {data,error}=await sb.from('ventas_netas').select('*').order('fecha',{ascending:false});
+  if(error){msg('Error cargando datos',false);return;}
+  ventas=data||[];
+  renderTabla();
+}
+
+function filtrados(){
+  const fe=document.getElementById('fil-especie').value;
+  const fd=document.getElementById('fil-desde').value;
+  const fh=document.getElementById('fil-hasta').value;
+  return ventas.filter(x=>{
+    if(fe&&x.especie!==fe) return false;
+    if(fd&&x.fecha<fd) return false;
+    if(fh&&x.fecha>fh) return false;
+    return true;
+  });
+}
+
+function renderTabla(){
+  const data=filtrados();
+  const body=document.getElementById('tabla-body');
+  const foot=document.getElementById('tabla-foot');
+  
+  // Totales dashboard
+  const tKilos=ventas.reduce((a,x)=>a+x.kilos,0);
+  const tTotal=ventas.reduce((a,x)=>a+(x.kilos*x.precio),0);
+  document.getElementById('t-guias').textContent=ventas.length;
+  document.getElementById('t-kilos').textContent=f(tKilos)+' kg';
+  document.getElementById('t-total').textContent=fm(tTotal);
+
+  if(!data.length){body.innerHTML='<tr><td colspan="8" class="empty">Sin ventas registradas</td></tr>';foot.innerHTML='';return;}
+  
+  body.innerHTML=data.map(x=>`
+    <tr>
+      <td><strong>${x.guia}</strong></td>
+      <td>${x.fecha}</td>
+      <td>${x.especie}</td>
+      <td>${x.calibre||'—'}</td>
+      <td>${f(x.kilos)} kg</td>
+      <td>${fm(x.precio)}</td>
+      <td><strong style="color:var(--g)">${fm(x.kilos*x.precio)}</strong></td>
+      <td style="display:flex;gap:4px">
+        <button class="btn-sm btn-edit" onclick="abrirEdit(${x.id})">✏️</button>
+        <button class="btn-sm btn-del" onclick="eliminar(${x.id})">✕</button>
+      </td>
+    </tr>
+  `).join('');
+
+  const fKilos=data.reduce((a,x)=>a+x.kilos,0);
+  const fTotal=data.reduce((a,x)=>a+(x.kilos*x.precio),0);
+  foot.innerHTML=`<tr style="background:#f0f7ec;font-weight:700">
+    <td colspan="4">TOTAL (${data.length} guías)</td>
+    <td>${f(fKilos)} kg</td>
+    <td></td>
+    <td style="color:var(--g);font-size:14px">${fm(fTotal)}</td>
+    <td></td>
+  </tr>`;
+}
+
+async function agregar(){
+  const guia=document.getElementById('guia').value.trim();
+  const especie=document.getElementById('especie').value;
+  const kilos=parseFloat(document.getElementById('kilos').value)||0;
+  const precio=parseFloat(document.getElementById('precio').value)||0;
+  if(!guia){msg('Ingresa N° de guía',false);return;}
+  if(!especie){msg('Selecciona especie',false);return;}
+  if(!kilos||!precio){msg('Ingresa kilos y precio',false);return;}
+  const rec={
+    id:Date.now(),
+    guia,
+    fecha:document.getElementById('fecha').value||today(),
+    especie,
+    calibre:document.getElementById('calibre').value,
+    kilos,
+    precio
+  };
+  const {error}=await sb.from('ventas_netas').insert(rec);
+  if(error){msg('Error: '+error.message,false);return;}
+  msg('✅ Venta registrada');
+  document.getElementById('guia').value='';
+  document.getElementById('especie').value='';
+  document.getElementById('calibre').value='';
+  document.getElementById('kilos').value='';
+  document.getElementById('precio').value='';
+  document.getElementById('preview-total').textContent='$0';
+  await cargar();
+}
+
+async function eliminar(id){
+  if(!confirm('¿Eliminar esta venta?')) return;
+  await sb.from('ventas_netas').delete().eq('id',id);
+  await cargar();
+}
+
+function abrirEdit(id){
+  const x=ventas.find(v=>v.id===id);if(!x) return;
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-guia').value=x.guia;
+  document.getElementById('edit-fecha').value=x.fecha;
+  document.getElementById('edit-especie').value=x.especie;
+  document.getElementById('edit-calibre').value=x.calibre||'';
+  document.getElementById('edit-kilos').value=x.kilos;
+  document.getElementById('edit-precio').value=x.precio;
+  document.getElementById('modal-edit').classList.add('show');
+}
+
+async function guardarEdit(){
+  const id=parseInt(document.getElementById('edit-id').value);
+  const kilos=parseFloat(document.getElementById('edit-kilos').value)||0;
+  const precio=parseFloat(document.getElementById('edit-precio').value)||0;
+  const {error}=await sb.from('ventas_netas').update({
+    guia:document.getElementById('edit-guia').value,
+    fecha:document.getElementById('edit-fecha').value,
+    especie:document.getElementById('edit-especie').value,
+    calibre:document.getElementById('edit-calibre').value,
+    kilos,precio
+  }).eq('id',id);
+  if(error){msg('Error: '+error.message,false);return;}
+  cerrarModal();
+  await cargar();
+  msg('✅ Venta actualizada');
+}
+
+function cerrarModal(){document.getElementById('modal-edit').classList.remove('show');}
+
+function exportExcel(){
+  const data=filtrados();
+  if(!data.length){msg('Sin datos para exportar',false);return;}
+  const rows=[['N° Guía','Fecha','Especie','Calibre','Kilos','$/kg','Total neto']];
+  data.forEach(x=>rows.push([x.guia,x.fecha,x.especie,x.calibre||'',x.kilos,x.precio,Math.round(x.kilos*x.precio)]));
+  const tKg=data.reduce((a,x)=>a+x.kilos,0);
+  const tTot=data.reduce((a,x)=>a+(x.kilos*x.precio),0);
+  rows.push(['TOTAL','','','',tKg,'',Math.round(tTot)]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:11},{wch:14},{wch:10},{wch:9},{wch:10},{wch:13}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ventas Netas');
+  XLSX.writeFile(wb,'VentasNetas_'+today()+'.xlsx');
+}
+
+function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const data=filtrados();
+  if(!data.length){msg('Sin datos para exportar',false);return;}
+  const doc=new jsPDF();
+  doc.setFillColor(45,106,79);doc.rect(0,0,210,22,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('FamilyFruit — Ventas Netas',14,14);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Generado: '+today(),196,14,{align:'right'});
+  const rows=data.map(x=>[x.guia,x.fecha,x.especie,x.calibre||'—',f(x.kilos)+' kg','$'+f(x.precio),'$'+f(x.kilos*x.precio)]);
+  const tKg=data.reduce((a,x)=>a+x.kilos,0);
+  const tTot=data.reduce((a,x)=>a+(x.kilos*x.precio),0);
+  doc.autoTable({
+    startY:28,
+    head:[['Guía','Fecha','Especie','Calibre','Kilos','$/kg','Total neto']],
+    body:rows,
+    foot:[['TOTAL ('+data.length+' guías)','','','',f(tKg)+' kg','','$'+f(tTot)]],
+    headStyles:{fillColor:[45,106,79],textColor:255,fontStyle:'bold'},
+    footStyles:{fillColor:[220,240,220],textColor:[26,46,24],fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[248,249,244]},
+    styles:{fontSize:10},
+  });
+  doc.save('VentasNetas_'+today()+'.pdf');
+}
+
+document.getElementById('fecha').value=today();
+cargar();
+</script>
+</body>
+</html>
